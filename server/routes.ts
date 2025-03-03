@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
 import { insertResponseSchema, insertUserSchema } from "@shared/schema";
-import { authenticateToken, comparePasswords, generateToken } from "./auth";
+import { authenticateToken, comparePasswords, generateToken, hashPassword } from "./auth";
 import OpenAI from "openai";
 import multer from "multer";
 import fs from 'fs';
@@ -36,6 +36,7 @@ export async function registerRoutes(app: Express) {
       const { passwordHash, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword, token });
     } catch (error) {
+      console.error('Registration error:', error);
       res.status(400).json({ error: "Invalid registration data" });
     }
   });
@@ -59,6 +60,7 @@ export async function registerRoutes(app: Express) {
 
       res.json({ user: userWithoutPassword, token });
     } catch (error) {
+      console.error('Login error:', error);
       res.status(500).json({ error: "Login failed" });
     }
   });
@@ -86,24 +88,34 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/responses/:id", authenticateToken, async (req, res) => {
-    const response = await storage.getResponse(parseInt(req.params.id));
-    if (!response) {
-      return res.status(404).json({ error: "Response not found" });
-    }
+    try {
+      const response = await storage.getResponse(parseInt(req.params.id));
+      if (!response) {
+        return res.status(404).json({ error: "Response not found" });
+      }
 
-    // Only allow users to access their own responses unless they're admin
-    if (response.userId !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ error: "Access denied" });
-    }
+      // Only allow users to access their own responses unless they're admin
+      if (response.userId !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Access denied" });
+      }
 
-    res.json(response);
+      res.json(response);
+    } catch (error) {
+      console.error('Error fetching response:', error);
+      res.status(500).json({ error: "Failed to fetch response" });
+    }
   });
 
   app.get("/api/user/responses", authenticateToken, async (req, res) => {
-    console.log('Fetching responses for user:', req.user.id);
-    const responses = await storage.getResponsesByUser(req.user.id);
-    console.log('Found responses:', responses);
-    res.json(responses);
+    try {
+      console.log('Fetching responses for user:', req.user.id);
+      const responses = await storage.getResponsesByUser(req.user.id);
+      console.log('Found responses:', responses);
+      res.json(responses);
+    } catch (error) {
+      console.error('Error fetching user responses:', error);
+      res.status(500).json({ error: "Failed to fetch responses" });
+    }
   });
 
   // Audio transcription endpoint

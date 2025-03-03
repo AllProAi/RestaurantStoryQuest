@@ -1,5 +1,15 @@
-import { type InsertResponse, type QuestionnaireResponse, type InsertUser, type User } from "@shared/schema";
+import { type InsertResponse, type QuestionnaireResponse, type InsertUser, type User, users, questionnaireResponses } from "@shared/schema";
 import { hashPassword } from "./auth";
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
+import pg from 'pg';
+
+// Initialize PostgreSQL connection
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const db = drizzle(pool);
 
 export interface IStorage {
   // User operations
@@ -8,73 +18,88 @@ export interface IStorage {
   getUserById(id: number): Promise<User | undefined>;
 
   // Questionnaire operations
-  createResponse(response: InsertResponse): Promise<QuestionnaireResponse>;
+  createResponse(response: InsertResponse & { userId: number }): Promise<QuestionnaireResponse>;
   getResponse(id: number): Promise<QuestionnaireResponse | undefined>;
   getResponsesByUser(userId: number): Promise<QuestionnaireResponse[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private responses: Map<number, QuestionnaireResponse>;
-  private currentUserId: number;
-  private currentResponseId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.responses = new Map();
-    this.currentUserId = 1;
-    this.currentResponseId = 1;
-  }
-
+export class PostgresStorage implements IStorage {
   async createUser(userData: InsertUser, role: string = 'user'): Promise<User> {
-    const id = this.currentUserId++;
     const passwordHash = await hashPassword(userData.password);
 
-    const newUser: User = {
-      id,
-      username: userData.username,
-      passwordHash,
-      name: userData.name,
-      role,
-      createdAt: new Date(),
-    };
+    const [newUser] = await db.insert(users)
+      .values({
+        username: userData.username,
+        passwordHash,
+        name: userData.name,
+        role,
+      })
+      .returning();
 
-    this.users.set(id, newUser);
     return newUser;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const results = await db.select()
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1);
+
+    return results[0];
   }
 
   async getUserById(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const results = await db.select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    return results[0];
   }
 
   async createResponse(response: InsertResponse & { userId: number }): Promise<QuestionnaireResponse> {
-    const id = this.currentResponseId++;
-    const newResponse: QuestionnaireResponse = {
-      ...response,
-      id,
-      lastSaved: new Date(),
-    };
+    console.log('Creating response with data:', response);
 
-    console.log('Creating response:', { id, userId: response.userId, newResponse });
-    this.responses.set(id, newResponse);
+    const [newResponse] = await db.insert(questionnaireResponses)
+      .values({
+        userId: response.userId,
+        personalJourney: response.personalJourney,
+        culinaryHeritage: response.culinaryHeritage,
+        businessDevelopment: response.businessDevelopment,
+        communityConnections: response.communityConnections,
+        visualPreferences: response.visualPreferences,
+        mediaUrls: response.mediaUrls || [],
+        language: response.language,
+      })
+      .returning();
+
+    console.log('Created response:', newResponse);
     return newResponse;
   }
 
   async getResponse(id: number): Promise<QuestionnaireResponse | undefined> {
-    return this.responses.get(id);
+    const results = await db.select()
+      .from(questionnaireResponses)
+      .where(eq(questionnaireResponses.id, id))
+      .limit(1);
+
+    return results[0];
   }
 
   async getResponsesByUser(userId: number): Promise<QuestionnaireResponse[]> {
     console.log('Getting responses for user:', userId);
-    console.log('All responses:', Array.from(this.responses.entries()));
-    return Array.from(this.responses.values())
-      .filter(response => response.userId === userId);
+
+    const responses = await db.select()
+      .from(questionnaireResponses)
+      .where(eq(questionnaireResponses.userId, userId));
+
+    console.log('Found responses:', responses);
+    return responses;
   }
 }
+
+// Initialize storage instance
+export const storage = new PostgresStorage();
 
 // Add initialization for default users
 async function initializeDefaultUsers() {
@@ -101,5 +126,4 @@ async function initializeDefaultUsers() {
   }
 }
 
-export const storage = new MemStorage();
 initializeDefaultUsers().catch(console.error);
