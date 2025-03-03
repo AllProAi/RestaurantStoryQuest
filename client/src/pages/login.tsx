@@ -47,11 +47,16 @@ export default function Login() {
         description: "Welcome back!",
       });
 
-      setLocation('/dashboard');
+      // Redirect based on user role
+      if (result.user.role === 'admin') {
+        setLocation('/dashboard');
+      } else {
+        setLocation('/questionnaire');
+      }
     } catch (error) {
       toast({
         title: "Login failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An error occurred',
         variant: "destructive",
       });
     }

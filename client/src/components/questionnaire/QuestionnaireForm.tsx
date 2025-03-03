@@ -10,10 +10,12 @@ import { SECTIONS } from "@/lib/constants";
 import { Section } from "./Section";
 import { ProgressBar } from "./ProgressBar";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 export function QuestionnaireForm() {
   const [currentSection, setCurrentSection] = useState(0);
   const [language, setLanguage] = useState<"en" | "patois">("en");
+  const [_, setLocation] = useLocation();
 
   const form = useForm<InsertResponse>({
     resolver: zodResolver(insertResponseSchema),
@@ -73,13 +75,22 @@ export function QuestionnaireForm() {
             >
               {language === "en" ? "Previous" : "Go Back"}
             </Button>
-            <Button
-              type="button"
-              onClick={() => setCurrentSection(c => Math.min(SECTIONS.length - 1, c + 1))}
-              disabled={currentSection === SECTIONS.length - 1}
-            >
-              {language === "en" ? "Next" : "Next Piece"}
-            </Button>
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setLocation('/dashboard')}
+              >
+                {language === "en" ? "View Dashboard" : "Go to Dashboard"}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setCurrentSection(c => Math.min(SECTIONS.length - 1, c + 1))}
+                disabled={currentSection === SECTIONS.length - 1}
+              >
+                {language === "en" ? "Next" : "Next Piece"}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>
