@@ -3,7 +3,7 @@ import { hashPassword } from "./auth";
 
 export interface IStorage {
   // User operations
-  createUser(userData: InsertUser): Promise<User>;
+  createUser(userData: InsertUser, role?: string): Promise<User>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserById(id: number): Promise<User | undefined>;
 
@@ -26,7 +26,7 @@ export class MemStorage implements IStorage {
     this.currentResponseId = 1;
   }
 
-  async createUser(userData: InsertUser): Promise<User> {
+  async createUser(userData: InsertUser, role: string = 'user'): Promise<User> {
     const id = this.currentUserId++;
     const passwordHash = await hashPassword(userData.password);
 
@@ -35,7 +35,7 @@ export class MemStorage implements IStorage {
       username: userData.username,
       passwordHash,
       name: userData.name,
-      role: 'user',
+      role,
       createdAt: new Date(),
     };
 
@@ -82,7 +82,7 @@ async function initializeDefaultUsers() {
       password: 'Testing1234@',
       name: 'Administrator',
       confirmPassword: 'Testing1234@',
-    });
+    }, 'admin');
   }
 
   // Create regular user

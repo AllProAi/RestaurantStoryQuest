@@ -17,7 +17,7 @@ export function generateToken(user: User): string {
   return jwt.sign(
     { 
       id: user.id, 
-      email: user.email,
+      username: user.username,
       role: user.role 
     }, 
     JWT_SECRET,
@@ -33,18 +33,17 @@ export async function validateUser(userData: InsertUser): Promise<{ isValid: boo
   const errors: string[] = [];
 
   // Basic validation
-  if (!userData.email || !userData.password) {
-    errors.push('Email and password are required');
+  if (!userData.username || !userData.password) {
+    errors.push('Username and password are required');
   }
 
   if (userData.password !== userData.confirmPassword) {
     errors.push('Passwords do not match');
   }
 
-  // Email format validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(userData.email)) {
-    errors.push('Invalid email format');
+  // Username format validation
+  if (userData.username.length < 3) {
+    errors.push('Username must be at least 3 characters long');
   }
 
   return {

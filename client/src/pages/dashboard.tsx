@@ -23,12 +23,14 @@ export default function Dashboard() {
     // Check if user is admin
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setIsAdmin(user.role === 'admin');
+    console.log('User role:', user.role);
 
     fetchResponses();
   }, []);
 
   const fetchResponses = async () => {
     try {
+      console.log('Fetching responses...');
       const response = await fetch('/api/user/responses', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -40,6 +42,7 @@ export default function Dashboard() {
       }
 
       const data = await response.json();
+      console.log('Fetched responses:', data);
       setResponses(data);
     } catch (error) {
       console.error('Error fetching responses:', error);
@@ -184,43 +187,51 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-6">
-          {responses.map((response, index) => (
-            <motion.div
-              key={response.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card>
-                <CardHeader>
-                  <h2 className="text-xl font-semibold">
-                    Story #{response.id}
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    Last updated: {new Date(response.lastSaved).toLocaleString()}
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* Personal Journey */}
-                    <div>
-                      <h3 className="font-semibold mb-2">Personal Journey</h3>
-                      <p className="text-sm text-gray-600 line-clamp-3">
-                        {response.personalJourney?.childhood || 'No content'}
-                      </p>
+          {responses.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center text-gray-500">
+                No stories found. Responses will appear here once submitted.
+              </CardContent>
+            </Card>
+          ) : (
+            responses.map((response, index) => (
+              <motion.div
+                key={response.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <h2 className="text-xl font-semibold">
+                      Story #{response.id}
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      Last updated: {new Date(response.lastSaved).toLocaleString()}
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Personal Journey */}
+                      <div>
+                        <h3 className="font-semibold mb-2">Personal Journey</h3>
+                        <p className="text-sm text-gray-600 line-clamp-3">
+                          {response.personalJourney?.childhood || 'No content'}
+                        </p>
+                      </div>
+                      {/* Culinary Heritage */}
+                      <div>
+                        <h3 className="font-semibold mb-2">Culinary Heritage</h3>
+                        <p className="text-sm text-gray-600 line-clamp-3">
+                          {response.culinaryHeritage?.signatureDishes || 'No content'}
+                        </p>
+                      </div>
                     </div>
-                    {/* Culinary Heritage */}
-                    <div>
-                      <h3 className="font-semibold mb-2">Culinary Heritage</h3>
-                      <p className="text-sm text-gray-600 line-clamp-3">
-                        {response.culinaryHeritage?.signatureDishes || 'No content'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          )}
         </div>
       </div>
     </Layout>
