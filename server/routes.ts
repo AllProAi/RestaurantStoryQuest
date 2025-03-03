@@ -40,14 +40,22 @@ export async function registerRoutes(app: Express) {
   app.post("/api/transcribe", upload.single('audio'), async (req, res) => {
     try {
       if (!req.file) {
+        console.error('No audio file received');
         return res.status(400).json({ error: "No audio file provided" });
       }
+
+      console.log('Received audio file:', {
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        originalname: req.file.originalname
+      });
 
       // Create a temporary file
       const tempFile = `temp-${Date.now()}.webm`;
       fs.writeFileSync(tempFile, req.file.buffer);
 
       try {
+        console.log('Sending file to OpenAI for transcription...');
         const transcription = await openai.audio.transcriptions.create({
           file: fs.createReadStream(tempFile),
           model: 'whisper-1',
@@ -61,7 +69,10 @@ export async function registerRoutes(app: Express) {
       }
     } catch (error) {
       console.error('Transcription error:', error);
-      res.status(500).json({ error: "Failed to transcribe audio" });
+      res.status(500).json({ 
+        error: "Failed to transcribe audio",
+        details: error.message 
+      });
     }
   });
 

@@ -42,20 +42,23 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           }
 
           // Transcribe the audio
+          console.log('Starting transcription of recording...');
           const transcribedText = await transcribeAudio(audioBlob);
           console.log('Received transcription:', transcribedText);
-          onTranscription(transcribedText);
 
-          toast({
-            title: language === "en" ? "Recording saved" : "Recording done",
-            description: language === "en" ? 
-              "Click play to review your recording" : 
-              "Press play fi listen back",
-          });
+          if (transcribedText) {
+            onTranscription(transcribedText);
+            toast({
+              title: language === "en" ? "Recording transcribed" : "Recording done",
+              description: language === "en" ? 
+                "Your story has been transcribed" : 
+                "Yu story write out now",
+            });
+          }
         } catch (error) {
           console.error('Error processing recording:', error);
           toast({
-            title: language === "en" ? "Recording failed" : "Recording nuh work",
+            title: language === "en" ? "Transcription failed" : "Transcription nuh work",
             description: language === "en" ? 
               "Please try recording again" : 
               "Try record it one more time",
@@ -69,6 +72,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
       mediaRecorder.current.start();
       setIsRecording(true);
     } catch (error) {
+      console.error('Error starting recording:', error);
       toast({
         title: language === "en" ? "Microphone access denied" : "Mic nuh work",
         description: language === "en" ? 
