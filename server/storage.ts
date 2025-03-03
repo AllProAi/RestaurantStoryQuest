@@ -4,7 +4,7 @@ import { hashPassword } from "./auth";
 export interface IStorage {
   // User operations
   createUser(userData: InsertUser): Promise<User>;
-  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   getUserById(id: number): Promise<User | undefined>;
 
   // Questionnaire operations
@@ -32,7 +32,7 @@ export class MemStorage implements IStorage {
 
     const newUser: User = {
       id,
-      email: userData.email,
+      username: userData.username,
       passwordHash,
       name: userData.name,
       role: 'user',
@@ -43,8 +43,8 @@ export class MemStorage implements IStorage {
     return newUser;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
   }
 
   async getUserById(id: number): Promise<User | undefined> {
@@ -75,10 +75,10 @@ export class MemStorage implements IStorage {
 // Add initialization for default users
 async function initializeDefaultUsers() {
   // Create admin user
-  const adminExists = await storage.getUserByEmail('Administrator');
+  const adminExists = await storage.getUserByUsername('Administrator');
   if (!adminExists) {
     await storage.createUser({
-      email: 'Administrator',
+      username: 'Administrator',
       password: 'Testing1234@',
       name: 'Administrator',
       confirmPassword: 'Testing1234@',
@@ -86,10 +86,10 @@ async function initializeDefaultUsers() {
   }
 
   // Create regular user
-  const userExists = await storage.getUserByEmail('JamaicanSpicy');
+  const userExists = await storage.getUserByUsername('JamaicanSpicy');
   if (!userExists) {
     await storage.createUser({
-      email: 'JamaicanSpicy',
+      username: 'JamaicanSpicy',
       password: 'TempPass@STX',
       name: 'Jamaican Spicy',
       confirmPassword: 'TempPass@STX',

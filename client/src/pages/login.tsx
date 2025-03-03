@@ -11,7 +11,7 @@ import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
+  username: z.string().min(1, "Please enter your username"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
@@ -19,7 +19,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [_, setLocation] = useLocation();
-  
+
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
@@ -76,12 +76,12 @@ export default function Login() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>Username</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="your@email.com" {...field} />
+                          <Input placeholder="Enter your username" {...field} />
                         </FormControl>
                       </FormItem>
                     )}
