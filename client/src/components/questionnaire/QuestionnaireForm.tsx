@@ -30,6 +30,16 @@ export function QuestionnaireForm() {
     },
   });
 
+  // Reset form when changing questions
+  useEffect(() => {
+    form.reset({
+      questionId: currentQuestionId,
+      textResponse: "",
+      audioUrl: "",
+      transcription: "",
+    });
+  }, [currentQuestionId, form]);
+
   const { mutate: saveResponse, isPending } = useMutation({
     mutationFn: async (data: InsertResponse) => {
       const token = localStorage.getItem('token');
@@ -58,6 +68,11 @@ export function QuestionnaireForm() {
         title: "Response Saved",
         description: "Your response has been saved successfully",
       });
+
+      // Go to next question after successful save if not on last question
+      if (currentQuestionId < (questions?.length || 8)) {
+        setCurrentQuestionId(prev => prev + 1);
+      }
     },
     onError: (error) => {
       toast({
@@ -132,17 +147,18 @@ export function QuestionnaireForm() {
                 <div className="flex gap-4">
                   <Button
                     type="submit"
+                    className="bg-green-600 hover:bg-green-700"
                     disabled={isPending}
                   >
-                    {isPending ? "Saving..." : "Save Response"}
+                    {isPending ? "Saving..." : "Save & Continue"}
                   </Button>
 
                   <Button
                     type="button"
-                    onClick={() => setCurrentQuestionId(id => Math.min(questions?.length || 8, id + 1))}
-                    disabled={currentQuestionId === (questions?.length || 8)}
+                    variant="outline"
+                    onClick={() => setLocation('/dashboard')}
                   >
-                    Next
+                    View All Responses
                   </Button>
                 </div>
               </div>
