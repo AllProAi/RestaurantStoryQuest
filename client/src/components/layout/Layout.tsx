@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { SunIcon } from "lucide-react";
+import { SunIcon, Flower2, Bird, Music, Leaf, Heart, Star } from "lucide-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -27,6 +27,15 @@ const headerVariants = {
   }
 };
 
+const floatingAnimation = {
+  y: [0, -10, 0],
+  transition: {
+    duration: 3,
+    repeat: Infinity,
+    ease: "easeInOut"
+  }
+};
+
 export function Layout({ children }: LayoutProps) {
   return (
     <motion.div 
@@ -39,7 +48,7 @@ export function Layout({ children }: LayoutProps) {
         className="bg-gradient-to-r from-[#009B3A] to-[#006400] text-white py-8 relative overflow-hidden"
         variants={headerVariants}
       >
-        {/* Decorative elements */}
+        {/* Animated Sun */}
         <motion.div 
           className="absolute top-0 right-0 w-32 h-32 opacity-20"
           animate={{ 
@@ -53,6 +62,92 @@ export function Layout({ children }: LayoutProps) {
           }}
         >
           <SunIcon size={128} />
+        </motion.div>
+
+        {/* Animated Doctor Bird */}
+        <motion.div
+          className="absolute top-10 left-10 text-yellow-200"
+          animate={floatingAnimation}
+        >
+          <Bird size={32} />
+        </motion.div>
+
+        {/* Animated Palm Leaves */}
+        <motion.div
+          className="absolute bottom-0 left-0 text-[#00FF00] opacity-30"
+          animate={{
+            skew: [-5, 5, -5],
+            transition: {
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }
+          }}
+        >
+          <Leaf size={64} />
+        </motion.div>
+
+        {/* Animated Ackee Pattern */}
+        <motion.div
+          className="absolute top-5 right-20 text-red-400 opacity-20"
+          animate={{
+            rotate: [0, 10, -10, 0],
+            transition: {
+              duration: 5,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }
+          }}
+        >
+          <Flower2 size={48} />
+        </motion.div>
+
+        {/* Floating Stars (representing Caribbean nights) */}
+        <motion.div
+          className="absolute top-20 right-40 text-yellow-200 opacity-30"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <Star size={24} />
+        </motion.div>
+
+        {/* Music Note */}
+        <motion.div
+          className="absolute bottom-5 right-10 text-yellow-200 opacity-30"
+          animate={{
+            y: [-20, 0, -20],
+            x: [0, 10, 0],
+            transition: {
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }
+          }}
+        >
+          <Music size={32} />
+        </motion.div>
+
+        {/* Pulsing Heart (representing community love) */}
+        <motion.div
+          className="absolute bottom-10 left-20 text-red-400 opacity-20"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.2, 0.4, 0.2],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <Heart size={32} />
         </motion.div>
 
         <div className="max-w-7xl mx-auto px-4 relative">
