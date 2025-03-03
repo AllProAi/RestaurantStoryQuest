@@ -15,6 +15,7 @@ interface SectionProps {
       key: string;
       label: string;
       labelPatois: string;
+      prompt: string;
     }>;
   };
   language: "en" | "patois";
@@ -94,10 +95,18 @@ export function Section({ section, language, form }: SectionProps) {
                   control={form.control}
                   name={`${section.id.replace("-", "")}['${field.key}']`}
                   render={({ field: formField }) => (
-                    <FormItem>
+                    <FormItem className="space-y-4">
                       <FormLabel className="text-lg font-semibold text-[#006400]">
                         {language === "en" ? field.label : field.labelPatois}
                       </FormLabel>
+                      <motion.p 
+                        className="text-sm text-gray-600 italic"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 + index * 0.1 }}
+                      >
+                        {field.prompt}
+                      </motion.p>
                       <FormControl>
                         <motion.div
                           whileHover={{ scale: 1.01 }}
