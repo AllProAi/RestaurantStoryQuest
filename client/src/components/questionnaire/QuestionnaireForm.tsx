@@ -22,12 +22,12 @@ export function QuestionnaireForm() {
   const [_, setLocation] = useLocation();
 
   // Fetch questions
-  const { data: questions, isLoading } = useQuery({
+  const { data: questions, isLoading: questionsLoading } = useQuery({
     queryKey: ['/api/questions'],
   });
 
   // Fetch existing response for current question
-  const { data: currentResponse } = useQuery({
+  const { data: currentResponse, isLoading: responseLoading } = useQuery({
     queryKey: ['/api/responses', currentQuestionId],
     enabled: !!currentQuestionId,
   });
@@ -45,6 +45,7 @@ export function QuestionnaireForm() {
   // Update form with existing response data when available
   useEffect(() => {
     if (currentResponse) {
+      console.log('Loading existing response:', currentResponse);
       setTranscriptions(currentResponse.transcriptions || []);
       form.reset({
         questionId: currentQuestionId,
@@ -132,8 +133,8 @@ export function QuestionnaireForm() {
     });
   });
 
-  if (isLoading) {
-    return <div>Loading questions...</div>;
+  if (questionsLoading || responseLoading) {
+    return <div>Loading...</div>;
   }
 
   const currentQuestion = questions?.find(q => q.id === currentQuestionId);
