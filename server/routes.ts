@@ -69,20 +69,20 @@ export async function registerRoutes(app: Express) {
   app.post("/api/responses", authenticateToken, async (req, res) => {
     try {
       const data = insertResponseSchema.parse(req.body);
-      console.log('Creating response with data:', {
+      console.log('Creating/updating response with data:', {
         ...data,
         userId: req.user.id
       });
 
-      const response = await storage.createResponse({
+      const response = await storage.createOrUpdateResponse({
         ...data,
         userId: req.user.id
       });
 
-      console.log('Created response:', response);
+      console.log('Response saved:', response);
       res.json(response);
     } catch (error) {
-      console.error('Error creating response:', error);
+      console.error('Error creating/updating response:', error);
       res.status(400).json({ error: "Invalid request data" });
     }
   });

@@ -47,7 +47,6 @@ export function QuestionnaireForm() {
         throw new Error('No authentication token found');
       }
 
-      // Log the data being saved
       console.log('Saving response data:', data);
 
       const response = await fetch('/api/responses', {
@@ -86,25 +85,21 @@ export function QuestionnaireForm() {
   });
 
   const handleTranscription = (text: string) => {
-    // Get current form values
-    const currentValues = form.getValues();
-
-    // Update the form with transcription while preserving other values
+    console.log('Setting transcription:', text);
     form.setValue('transcription', text);
-
-    // If we have both text response and transcription, save the response
-    if (currentValues.textResponse) {
-      handleSave(form.getValues());
-    }
   };
 
-  const handleSave = (data: InsertResponse) => {
-    console.log('Saving complete response:', data);
+  const handleSave = form.handleSubmit((data) => {
+    console.log('Submitting form data:', {
+      ...data,
+      questionId: currentQuestionId,
+    });
+
     saveResponse({
       ...data,
       questionId: currentQuestionId,
     });
-  };
+  });
 
   if (isLoading) {
     return <div>Loading questions...</div>;
@@ -123,7 +118,7 @@ export function QuestionnaireForm() {
           <p className="text-lg mb-6">{currentQuestion?.text}</p>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
+            <form onSubmit={handleSave} className="space-y-6">
               <div className="space-y-4">
                 <label className="font-medium">Your Response:</label>
                 <Textarea

@@ -1,7 +1,7 @@
 import { type InsertResponse, type Response, type InsertUser, type User, type Question, users, questions, responses } from "@shared/schema";
 import { hashPassword } from "./auth";
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from './db';
 
 export interface IStorage {
@@ -14,7 +14,7 @@ export interface IStorage {
   getQuestions(): Promise<Question[]>;
 
   // Response operations
-  createResponse(response: InsertResponse & { userId: number }): Promise<Response>;
+  createOrUpdateResponse(response: InsertResponse & { userId: number }): Promise<Response>;
   getResponse(id: number): Promise<Response | undefined>;
   getResponsesByUser(userId: number): Promise<Response[]>;
 }
@@ -57,24 +57,53 @@ export class PostgresStorage implements IStorage {
     return db.select().from(questions).orderBy(questions.order);
   }
 
-  async createResponse(response: InsertResponse & { userId: number }): Promise<Response> {
-    console.log('Creating response with data:', response);
+  async createOrUpdateResponse(response: InsertResponse & { userId: number }): Promise<Response> {
+    console.log('Creating/Updating response with data:', response);
 
     try {
-      const [newResponse] = await db.insert(responses)
-        .values({
-          questionId: response.questionId,
-          userId: response.userId,
-          textResponse: response.textResponse,
-          audioUrl: response.audioUrl,
-          transcription: response.transcription,
-        })
-        .returning();
+      // Check if response already exists for this question and user
+      const existingResponse = await db.select()
+        .from(responses)
+        .where(
+          and(
+            eq(responses.questionId, response.questionId),
+            eq(responses.userId, response.userId)
+          )
+        )
+        .limit(1);
 
-      console.log('Created response:', newResponse);
-      return newResponse;
+      if (existingResponse.length > 0) {
+        // Update existing response
+        console.log('Updating existing response:', existingResponse[0].id);
+        const [updatedResponse] = await db.update(responses)
+          .set({
+            textResponse: response.textResponse || existingResponse[0].textResponse,
+            audioUrl: response.audioUrl || existingResponse[0].audioUrl,
+            transcription: response.transcription || existingResponse[0].transcription,
+          })
+          .where(eq(responses.id, existingResponse[0].id))
+          .returning();
+
+        console.log('Updated response:', updatedResponse);
+        return updatedResponse;
+      } else {
+        // Create new response
+        console.log('Creating new response');
+        const [newResponse] = await db.insert(responses)
+          .values({
+            questionId: response.questionId,
+            userId: response.userId,
+            textResponse: response.textResponse,
+            audioUrl: response.audioUrl,
+            transcription: response.transcription,
+          })
+          .returning();
+
+        console.log('Created response:', newResponse);
+        return newResponse;
+      }
     } catch (error) {
-      console.error('Error creating response:', error);
+      console.error('Error creating/updating response:', error);
       throw error;
     }
   }
@@ -94,7 +123,8 @@ export class PostgresStorage implements IStorage {
     try {
       const userResponses = await db.select()
         .from(responses)
-        .where(eq(responses.userId, userId));
+        .where(eq(responses.userId, userId))
+        .orderBy(responses.questionId);
 
       console.log('Found responses:', userResponses);
       return userResponses;
