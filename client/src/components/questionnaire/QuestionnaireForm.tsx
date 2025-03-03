@@ -26,29 +26,24 @@ export function QuestionnaireForm() {
     queryKey: ['/api/questions'],
   });
 
-  // Fetch existing response for current question
-  const { data: currentResponse, isLoading: responseLoading } = useQuery({
-    queryKey: ['/api/responses', currentQuestionId],
-    select: (data: any) => {
-      // If data is an array (multiple responses), find the one for current question
-      if (Array.isArray(data)) {
-        return data.find(r => r.questionId === currentQuestionId);
-      }
-      return data;
-    }
+  // Fetch user responses
+  const { data: userResponses = [], isLoading: responsesLoading } = useQuery({
+    queryKey: ['/api/user/responses'],
   });
+
+  const currentResponse = userResponses.find(r => r.questionId === currentQuestionId);
 
   const form = useForm<InsertResponse>({
     resolver: zodResolver(insertResponseSchema),
     defaultValues: {
       questionId: currentQuestionId,
-      textResponse: "",
-      audioUrl: "",
-      transcriptions: [],
+      textResponse: currentResponse?.textResponse || "",
+      audioUrl: currentResponse?.audioUrl || "",
+      transcriptions: currentResponse?.transcriptions || [],
     },
   });
 
-  // Update form with existing response data when available
+  // Update form when response changes
   useEffect(() => {
     if (currentResponse) {
       console.log('Loading existing response:', currentResponse);
@@ -59,15 +54,6 @@ export function QuestionnaireForm() {
         transcriptions: currentResponse.transcriptions || [],
       });
       setTranscriptions(currentResponse.transcriptions || []);
-    } else {
-      // Only reset if there's no current response
-      form.reset({
-        questionId: currentQuestionId,
-        textResponse: "",
-        audioUrl: "",
-        transcriptions: [],
-      });
-      setTranscriptions([]);
     }
   }, [currentQuestionId, currentResponse, form]);
 
@@ -97,8 +83,10 @@ export function QuestionnaireForm() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate both the specific response query and the responses list
+      // Invalidate both queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/user/responses'] });
       queryClient.invalidateQueries({ queryKey: ['/api/responses'] });
+
       toast({
         title: "Response Saved",
         description: "Your response has been saved successfully",
@@ -135,7 +123,7 @@ export function QuestionnaireForm() {
     saveResponse(dataToSave);
   });
 
-  if (questionsLoading || responseLoading) {
+  if (questionsLoading || responsesLoading) {
     return <div>Loading...</div>;
   }
 
