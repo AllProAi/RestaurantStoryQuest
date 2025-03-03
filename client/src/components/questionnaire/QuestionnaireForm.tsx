@@ -113,6 +113,9 @@ export function QuestionnaireForm() {
     const newTranscriptions = [...transcriptions, text];
     setTranscriptions(newTranscriptions);
     form.setValue('transcriptions', newTranscriptions);
+
+    // Save response after adding new transcription
+    handleSave();
   };
 
   const handleSave = form.handleSubmit((data) => {
