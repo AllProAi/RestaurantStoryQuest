@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -29,27 +29,46 @@ export function QuestionnaireForm() {
   // Fetch user responses
   const { data: userResponses = [], isLoading: responsesLoading } = useQuery<Response[]>({
     queryKey: ['/api/user/responses'],
+    onSuccess: (data) => {
+      const currentResponse = data.find(r => r.questionId === currentQuestionId);
+      if (currentResponse) {
+        setTranscriptions(currentResponse.transcriptions || []);
+        form.reset({
+          questionId: currentQuestionId,
+          textResponse: currentResponse.textResponse || "",
+          audioUrl: currentResponse.audioUrl || "",
+          transcriptions: currentResponse.transcriptions || [],
+        });
+      }
+    }
   });
 
   // Find current response
   const currentResponse = userResponses.find(r => r.questionId === currentQuestionId);
 
-  // Initialize form with current response data if it exists
   const form = useForm<InsertResponse>({
     resolver: zodResolver(insertResponseSchema),
     defaultValues: {
       questionId: currentQuestionId,
-      textResponse: currentResponse?.textResponse || "",
-      audioUrl: currentResponse?.audioUrl || "",
-      transcriptions: currentResponse?.transcriptions || [],
-    },
-    values: {
-      questionId: currentQuestionId,
-      textResponse: currentResponse?.textResponse || "",
-      audioUrl: currentResponse?.audioUrl || "",
-      transcriptions: currentResponse?.transcriptions || [],
+      textResponse: "",
+      audioUrl: "",
+      transcriptions: [],
     }
   });
+
+  // Effect to handle response changes when switching questions
+  useEffect(() => {
+    if (currentResponse) {
+      console.log('Loading response for question:', currentQuestionId, currentResponse);
+      setTranscriptions(currentResponse.transcriptions || []);
+      form.reset({
+        questionId: currentQuestionId,
+        textResponse: currentResponse.textResponse || "",
+        audioUrl: currentResponse.audioUrl || "",
+        transcriptions: currentResponse.transcriptions || [],
+      });
+    }
+  }, [currentQuestionId, currentResponse]);
 
   const { mutate: saveResponse, isPending } = useMutation({
     mutationFn: async (data: InsertResponse) => {
@@ -78,8 +97,6 @@ export function QuestionnaireForm() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user/responses'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/responses'] });
-
       toast({
         title: "Response Saved",
         description: "Your response has been saved successfully",
