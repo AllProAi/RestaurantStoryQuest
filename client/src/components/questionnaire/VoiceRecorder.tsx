@@ -24,7 +24,11 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
   const audioChunks = useRef<Blob[]>([]);
   const audioElements = useRef<HTMLAudioElement[]>([]);
 
-  const startRecording = async () => {
+  const startRecording = async (e: React.MouseEvent) => {
+    // Prevent form submission
+    e.preventDefault();
+    e.stopPropagation();
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -39,7 +43,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
 
       mediaRecorder.current = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus',
-        audioBitsPerSecond: 128000 // 128 kbps for high quality audio
+        audioBitsPerSecond: 128000
       });
 
       audioChunks.current = [];
@@ -55,20 +59,17 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
           const url = URL.createObjectURL(audioBlob);
 
-          // Transcribe the audio
           console.log('Starting transcription of recording...');
           const transcribedText = await transcribeAudio(audioBlob);
           console.log('Received transcription:', transcribedText);
 
           if (transcribedText) {
-            // Add new recording to the list
             setRecordings(prev => [...prev, {
               url,
               transcription: transcribedText,
               isPlaying: false
             }]);
 
-            // Add transcription to form field
             onTranscription(transcribedText);
 
             toast({
@@ -106,7 +107,11 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = (e: React.MouseEvent) => {
+    // Prevent form submission
+    e.preventDefault();
+    e.stopPropagation();
+
     if (mediaRecorder.current && isRecording) {
       mediaRecorder.current.stop();
       mediaRecorder.current.stream.getTracks().forEach(track => track.stop());
@@ -149,6 +154,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               onClick={startRecording}
+              type="button" // Explicitly set type to button
               className="bg-red-500 hover:bg-red-600"
               disabled={isProcessing}
             >
@@ -165,6 +171,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           >
             <Button
               onClick={stopRecording}
+              type="button" // Explicitly set type to button
               variant="destructive"
             >
               <Square className="w-4 h-4 mr-2" />
@@ -180,7 +187,6 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           </div>
         )}
       </div>
-
       {/* Recordings list */}
       <div className="space-y-4">
         {recordings.map((recording, index) => (
