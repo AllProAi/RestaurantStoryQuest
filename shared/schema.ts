@@ -1,7 +1,8 @@
-import { pgTable, text, serial, json, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// User authentication table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: varchar("username", { length: 255 }).notNull().unique(),
@@ -11,50 +12,22 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const questionnaireResponses = pgTable("questionnaire_responses", {
+// Questions table
+export const questions = pgTable("questions", {
   id: serial("id").primaryKey(),
+  text: text("text").notNull(),
+  order: serial("order").notNull(),
+});
+
+// Responses table - stores user responses to questions
+export const responses = pgTable("responses", {
+  id: serial("id").primaryKey(),
+  questionId: serial("question_id").references(() => questions.id),
   userId: serial("user_id").references(() => users.id),
-  personalJourney: json("personal_journey").$type<{
-    childhood: string;
-    immigration: string;
-    challenges: string;
-    familyRecipes: string;
-    influences: string;
-    customs: string;
-  }>(),
-  culinaryHeritage: json("culinary_heritage").$type<{
-    signatureDishes: string;
-    ingredients: string;
-    techniques: string;
-    recipeEvolution: string;
-    fusion: string;
-    menuPhilosophy: string;
-  }>(),
-  businessDevelopment: json("business_development").$type<{
-    inspiration: string;
-    timeline: string;
-    vision: string;
-    challenges: string;
-    achievements: string;
-    aspirations: string;
-  }>(),
-  communityConnections: json("community_connections").$type<{
-    customers: string;
-    localBusiness: string;
-    events: string;
-    economy: string;
-    jamaicanCommunity: string;
-  }>(),
-  visualPreferences: json("visual_preferences").$type<{
-    colors: string[];
-    imagery: string;
-    symbols: string;
-    atmosphere: string;
-    tone: string;
-  }>(),
-  mediaUrls: text("media_urls").array(),
-  language: text("language").notNull(),
-  lastSaved: timestamp("last_saved").notNull().defaultNow(),
+  textResponse: text("text_response"),
+  audioUrl: text("audio_url"),
+  transcription: text("transcription"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Schema for user registration
@@ -75,9 +48,14 @@ export const insertUserSchema = createInsertSchema(users).omit({
   path: ["confirmPassword"],
 });
 
-export const insertResponseSchema = createInsertSchema(questionnaireResponses);
+// Schema for submitting responses
+export const insertResponseSchema = createInsertSchema(responses).omit({
+  id: true,
+  createdAt: true,
+});
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertResponse = z.infer<typeof insertResponseSchema>;
 export type User = typeof users.$inferSelect;
-export type QuestionnaireResponse = typeof questionnaireResponses.$inferSelect;
+export type Question = typeof questions.$inferSelect;
+export type Response = typeof responses.$inferSelect;

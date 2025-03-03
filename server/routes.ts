@@ -158,6 +158,18 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Add this to the existing routes
+  app.get("/api/questions", async (_req, res) => {
+    try {
+      const questions = await storage.getQuestions();
+      res.json(questions);
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      res.status(500).json({ error: "Failed to fetch questions" });
+    }
+  });
+
+
   const httpServer = createServer(app);
   return httpServer;
 }

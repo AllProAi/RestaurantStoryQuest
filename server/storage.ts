@@ -1,4 +1,4 @@
-import { type InsertResponse, type QuestionnaireResponse, type InsertUser, type User, users, questionnaireResponses } from "@shared/schema";
+import { type InsertResponse, type Response, type InsertUser, type User, type Question, users, questions, responses } from "@shared/schema";
 import { hashPassword } from "./auth";
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { eq } from 'drizzle-orm';
@@ -10,10 +10,13 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserById(id: number): Promise<User | undefined>;
 
-  // Questionnaire operations
-  createResponse(response: InsertResponse & { userId: number }): Promise<QuestionnaireResponse>;
-  getResponse(id: number): Promise<QuestionnaireResponse | undefined>;
-  getResponsesByUser(userId: number): Promise<QuestionnaireResponse[]>;
+  // Question operations
+  getQuestions(): Promise<Question[]>;
+
+  // Response operations
+  createResponse(response: InsertResponse & { userId: number }): Promise<Response>;
+  getResponse(id: number): Promise<Response | undefined>;
+  getResponsesByUser(userId: number): Promise<Response[]>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -50,20 +53,21 @@ export class PostgresStorage implements IStorage {
     return results[0];
   }
 
-  async createResponse(response: InsertResponse & { userId: number }): Promise<QuestionnaireResponse> {
+  async getQuestions(): Promise<Question[]> {
+    return db.select().from(questions).orderBy(questions.order);
+  }
+
+  async createResponse(response: InsertResponse & { userId: number }): Promise<Response> {
     console.log('Creating response with data:', response);
 
     try {
-      const [newResponse] = await db.insert(questionnaireResponses)
+      const [newResponse] = await db.insert(responses)
         .values({
+          questionId: response.questionId,
           userId: response.userId,
-          personalJourney: response.personalJourney,
-          culinaryHeritage: response.culinaryHeritage,
-          businessDevelopment: response.businessDevelopment,
-          communityConnections: response.communityConnections,
-          visualPreferences: response.visualPreferences,
-          mediaUrls: response.mediaUrls || [],
-          language: response.language,
+          textResponse: response.textResponse,
+          audioUrl: response.audioUrl,
+          transcription: response.transcription,
         })
         .returning();
 
@@ -75,22 +79,22 @@ export class PostgresStorage implements IStorage {
     }
   }
 
-  async getResponse(id: number): Promise<QuestionnaireResponse | undefined> {
+  async getResponse(id: number): Promise<Response | undefined> {
     const results = await db.select()
-      .from(questionnaireResponses)
-      .where(eq(questionnaireResponses.id, id))
+      .from(responses)
+      .where(eq(responses.id, id))
       .limit(1);
 
     return results[0];
   }
 
-  async getResponsesByUser(userId: number): Promise<QuestionnaireResponse[]> {
+  async getResponsesByUser(userId: number): Promise<Response[]> {
     console.log('Getting responses for user:', userId);
 
     try {
       const responses = await db.select()
-        .from(questionnaireResponses)
-        .where(eq(questionnaireResponses.userId, userId));
+        .from(responses)
+        .where(eq(responses.userId, userId));
 
       console.log('Found responses:', responses);
       return responses;
