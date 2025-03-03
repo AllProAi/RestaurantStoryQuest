@@ -5,6 +5,7 @@ import { UseFormReturn } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import type { InsertResponse } from "@shared/schema";
 import { CULTURAL_PROVERBS } from "@/lib/constants";
+import { VoiceRecorder } from "./VoiceRecorder";
 
 interface SectionProps {
   section: {
@@ -109,20 +110,28 @@ export function Section({ section, language, form }: SectionProps) {
                         {language === "en" ? field.prompt : field.promptPatois}
                       </motion.p>
                       <FormControl>
-                        <motion.div
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                        >
-                          <Textarea
-                            {...formField}
-                            className="min-h-[100px] border-2 border-[#009B3A] focus:border-[#FED100] transition-colors duration-200"
-                            placeholder={
-                              language === "en"
-                                ? "Share your story..."
-                                : "Tell wi bout it..."
-                            }
+                        <div className="space-y-4">
+                          <motion.div
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                          >
+                            <Textarea
+                              {...formField}
+                              className="min-h-[100px] border-2 border-[#009B3A] focus:border-[#FED100] transition-colors duration-200"
+                              placeholder={
+                                language === "en"
+                                  ? "Share your story..."
+                                  : "Tell wi bout it..."
+                              }
+                            />
+                          </motion.div>
+                          <VoiceRecorder 
+                            language={language}
+                            onTranscription={(text) => {
+                              formField.onChange(formField.value ? `${formField.value}\n\n${text}` : text);
+                            }}
                           />
-                        </motion.div>
+                        </div>
                       </FormControl>
                     </FormItem>
                   )}
