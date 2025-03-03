@@ -52,6 +52,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const insertResponseSchema = createInsertSchema(responses).omit({
   id: true,
   createdAt: true,
+}).extend({
+  transcriptions: z.array(z.string()).optional().default([]),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
