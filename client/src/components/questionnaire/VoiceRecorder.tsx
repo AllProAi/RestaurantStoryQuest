@@ -17,14 +17,12 @@ export function VoiceRecorder({ onTranscription, language }: VoiceRecorderProps)
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const audioElement = useRef<HTMLAudioElement | null>(null);
-  const startTime = useRef<Date | null>(null);
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder.current = new MediaRecorder(stream);
       audioChunks.current = [];
-      startTime.current = new Date();
 
       mediaRecorder.current.ondataavailable = (event) => {
         audioChunks.current.push(event.data);
@@ -42,22 +40,11 @@ export function VoiceRecorder({ onTranscription, language }: VoiceRecorderProps)
             audioElement.current.src = url;
           }
 
-          const duration = startTime.current ? 
-            Math.round((new Date().getTime() - startTime.current.getTime()) / 1000) : 0;
-
-          // Add a timestamp and duration to the recording
-          const timestamp = new Date().toLocaleTimeString();
-          onTranscription(
-            language === "en" 
-              ? `[Voice Recording at ${timestamp} - Duration: ${duration} seconds]`
-              : `[Voice Recording: ${timestamp} - Length: ${duration} seconds]`
-          );
-
           toast({
             title: language === "en" ? "Recording saved" : "Recording done",
             description: language === "en" ? 
-              "Your story has been recorded successfully. Click play to review." : 
-              "Yu story recorded good. Press play fi listen back.",
+              "Click play to review your recording" : 
+              "Press play fi listen back",
           });
         } catch (error) {
           toast({
