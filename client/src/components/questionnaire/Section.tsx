@@ -16,6 +16,7 @@ interface SectionProps {
       label: string;
       labelPatois: string;
       prompt: string;
+      promptPatois: string;
     }>;
   };
   language: "en" | "patois";
@@ -105,7 +106,7 @@ export function Section({ section, language, form }: SectionProps) {
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 + index * 0.1 }}
                       >
-                        {field.prompt}
+                        {language === "en" ? field.prompt : field.promptPatois}
                       </motion.p>
                       <FormControl>
                         <motion.div
