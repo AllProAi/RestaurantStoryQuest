@@ -10,6 +10,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { Textarea } from "@/components/ui/textarea";
+import { queryClient } from "@/lib/queryClient";
 
 export function QuestionnaireForm() {
   const [currentQuestionId, setCurrentQuestionId] = useState(1);
@@ -18,6 +19,12 @@ export function QuestionnaireForm() {
   // Fetch questions
   const { data: questions, isLoading } = useQuery({
     queryKey: ['/api/questions'],
+  });
+
+  // Fetch existing response for current question
+  const { data: currentResponse } = useQuery({
+    queryKey: ['/api/responses', currentQuestionId],
+    enabled: !!currentQuestionId,
   });
 
   const form = useForm<InsertResponse>({
@@ -30,15 +37,24 @@ export function QuestionnaireForm() {
     },
   });
 
-  // Reset form when changing questions
+  // Update form with existing response data when available
   useEffect(() => {
-    form.reset({
-      questionId: currentQuestionId,
-      textResponse: "",
-      audioUrl: "",
-      transcription: "",
-    });
-  }, [currentQuestionId, form]);
+    if (currentResponse) {
+      form.reset({
+        questionId: currentQuestionId,
+        textResponse: currentResponse.textResponse || "",
+        audioUrl: currentResponse.audioUrl || "",
+        transcription: currentResponse.transcription || "",
+      });
+    } else {
+      form.reset({
+        questionId: currentQuestionId,
+        textResponse: "",
+        audioUrl: "",
+        transcription: "",
+      });
+    }
+  }, [currentQuestionId, currentResponse, form]);
 
   const { mutate: saveResponse, isPending } = useMutation({
     mutationFn: async (data: InsertResponse) => {
@@ -66,6 +82,7 @@ export function QuestionnaireForm() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/responses'] });
       toast({
         title: "Response Saved",
         description: "Your response has been saved successfully",

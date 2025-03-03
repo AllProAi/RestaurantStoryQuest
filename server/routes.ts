@@ -106,6 +106,23 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/responses/:questionId", authenticateToken, async (req, res) => {
+    try {
+      console.log('Fetching response for question:', req.params.questionId);
+      const responses = await storage.getResponsesByUser(req.user.id);
+      const response = responses.find(r => r.questionId === parseInt(req.params.questionId));
+
+      if (!response) {
+        return res.json(null);
+      }
+
+      res.json(response);
+    } catch (error) {
+      console.error('Error fetching response:', error);
+      res.status(500).json({ error: "Failed to fetch response" });
+    }
+  });
+
   app.get("/api/user/responses", authenticateToken, async (req, res) => {
     try {
       console.log('Fetching responses for user:', req.user.id);
