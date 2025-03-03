@@ -4,8 +4,9 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
-import { Download, LogOut } from "lucide-react";
+import { Download, LogOut, FileText } from "lucide-react";
 import type { QuestionnaireResponse } from "@shared/schema";
+import { SECTIONS } from "@/lib/constants";
 
 export default function Dashboard() {
   const [responses, setResponses] = useState<QuestionnaireResponse[]>([]);
@@ -51,7 +52,7 @@ export default function Dashboard() {
     setLocation('/login');
   };
 
-  const handleExport = async () => {
+  const handleExportCSV = async () => {
     // Create CSV content
     const csvContent = responses.map(response => ({
       'Personal Journey - Childhood': response.personalJourney?.childhood || '',
@@ -97,6 +98,54 @@ export default function Dashboard() {
     link.click();
   };
 
+  const handleExportMarkdown = () => {
+    // Create markdown content
+    let markdownContent = `# Jamaican Restaurant Stories Export\n\n`;
+    markdownContent += `Generated on: ${new Date().toLocaleString()}\n\n`;
+
+    responses.forEach((response, responseIndex) => {
+      markdownContent += `## Story #${responseIndex + 1}\n\n`;
+      markdownContent += `- Language: ${response.language}\n`;
+      markdownContent += `- Last Saved: ${new Date(response.lastSaved).toLocaleString()}\n\n`;
+
+      SECTIONS.forEach(section => {
+        markdownContent += `### ${section.title}\n\n`;
+
+        section.fields.forEach(field => {
+          markdownContent += `#### ${field.label}\n\n`;
+
+          // Get the response data for this field
+          const sectionId = section.id.replace("-", "");
+          const fieldResponse = response[sectionId]?.[field.key];
+
+          if (fieldResponse) {
+            // Split response into typed content and transcriptions
+            const parts = fieldResponse.split('\n\n');
+
+            parts.forEach((part, index) => {
+              if (index === 0) {
+                markdownContent += `**Typed Response:**\n${part}\n\n`;
+              } else {
+                markdownContent += `**Recording ${index}:**\n${part}\n\n`;
+              }
+            });
+          } else {
+            markdownContent += `*No response provided*\n\n`;
+          }
+        });
+      });
+
+      markdownContent += `---\n\n`; // Separator between stories
+    });
+
+    // Create and download file
+    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `stories_export_${new Date().toISOString()}.md`;
+    link.click();
+  };
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-6">
@@ -106,13 +155,22 @@ export default function Dashboard() {
           </h1>
           <div className="flex gap-4">
             {isAdmin && (
-              <Button
-                onClick={handleExport}
-                className="bg-[#009B3A] hover:bg-[#006400]"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export All Stories
-              </Button>
+              <>
+                <Button
+                  onClick={handleExportMarkdown}
+                  className="bg-[#009B3A] hover:bg-[#006400]"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export as Markdown
+                </Button>
+                <Button
+                  onClick={handleExportCSV}
+                  className="bg-[#009B3A] hover:bg-[#006400]"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export as CSV
+                </Button>
+              </>
             )}
             <Button
               onClick={handleLogout}
