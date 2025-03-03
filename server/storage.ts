@@ -1,15 +1,8 @@
 import { type InsertResponse, type QuestionnaireResponse, type InsertUser, type User, users, questionnaireResponses } from "@shared/schema";
 import { hashPassword } from "./auth";
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle } from 'drizzle-orm/neon-serverless';
 import { eq } from 'drizzle-orm';
-import pg from 'pg';
-
-// Initialize PostgreSQL connection
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-const db = drizzle(pool);
+import { db } from './db';
 
 export interface IStorage {
   // User operations
@@ -63,13 +56,13 @@ export class PostgresStorage implements IStorage {
     try {
       const [newResponse] = await db.insert(questionnaireResponses)
         .values({
-          user_id: response.userId, // Rename to match PostgreSQL schema
-          personal_journey: response.personalJourney,
-          culinary_heritage: response.culinaryHeritage,
-          business_development: response.businessDevelopment,
-          community_connections: response.communityConnections,
-          visual_preferences: response.visualPreferences,
-          media_urls: response.mediaUrls || [],
+          userId: response.userId,
+          personalJourney: response.personalJourney,
+          culinaryHeritage: response.culinaryHeritage,
+          businessDevelopment: response.businessDevelopment,
+          communityConnections: response.communityConnections,
+          visualPreferences: response.visualPreferences,
+          mediaUrls: response.mediaUrls || [],
           language: response.language,
         })
         .returning();
@@ -97,7 +90,7 @@ export class PostgresStorage implements IStorage {
     try {
       const responses = await db.select()
         .from(questionnaireResponses)
-        .where(eq(questionnaireResponses.user_id, userId)); // Use user_id instead of userId
+        .where(eq(questionnaireResponses.userId, userId));
 
       console.log('Found responses:', responses);
       return responses;
