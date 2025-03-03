@@ -60,21 +60,26 @@ export class PostgresStorage implements IStorage {
   async createResponse(response: InsertResponse & { userId: number }): Promise<QuestionnaireResponse> {
     console.log('Creating response with data:', response);
 
-    const [newResponse] = await db.insert(questionnaireResponses)
-      .values({
-        userId: response.userId,
-        personalJourney: response.personalJourney,
-        culinaryHeritage: response.culinaryHeritage,
-        businessDevelopment: response.businessDevelopment,
-        communityConnections: response.communityConnections,
-        visualPreferences: response.visualPreferences,
-        mediaUrls: response.mediaUrls || [],
-        language: response.language,
-      })
-      .returning();
+    try {
+      const [newResponse] = await db.insert(questionnaireResponses)
+        .values({
+          user_id: response.userId, // Rename to match PostgreSQL schema
+          personal_journey: response.personalJourney,
+          culinary_heritage: response.culinaryHeritage,
+          business_development: response.businessDevelopment,
+          community_connections: response.communityConnections,
+          visual_preferences: response.visualPreferences,
+          media_urls: response.mediaUrls || [],
+          language: response.language,
+        })
+        .returning();
 
-    console.log('Created response:', newResponse);
-    return newResponse;
+      console.log('Created response:', newResponse);
+      return newResponse;
+    } catch (error) {
+      console.error('Error creating response:', error);
+      throw error;
+    }
   }
 
   async getResponse(id: number): Promise<QuestionnaireResponse | undefined> {
@@ -89,12 +94,17 @@ export class PostgresStorage implements IStorage {
   async getResponsesByUser(userId: number): Promise<QuestionnaireResponse[]> {
     console.log('Getting responses for user:', userId);
 
-    const responses = await db.select()
-      .from(questionnaireResponses)
-      .where(eq(questionnaireResponses.userId, userId));
+    try {
+      const responses = await db.select()
+        .from(questionnaireResponses)
+        .where(eq(questionnaireResponses.user_id, userId)); // Use user_id instead of userId
 
-    console.log('Found responses:', responses);
-    return responses;
+      console.log('Found responses:', responses);
+      return responses;
+    } catch (error) {
+      console.error('Error getting responses:', error);
+      throw error;
+    }
   }
 }
 

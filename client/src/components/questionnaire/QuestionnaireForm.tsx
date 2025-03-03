@@ -69,7 +69,17 @@ export function QuestionnaireForm() {
   });
 
   const handleSave = form.handleSubmit((data) => {
-    saveResponse({ ...data, language });
+    console.log('Saving form data:', data);
+    saveResponse({ 
+      ...data,
+      personalJourney: data.personalJourney || null,
+      culinaryHeritage: data.culinaryHeritage || null,
+      businessDevelopment: data.businessDevelopment || null,
+      communityConnections: data.communityConnections || null,
+      visualPreferences: data.visualPreferences || null,
+      mediaUrls: data.mediaUrls || [],
+      language 
+    });
   });
 
   return (
