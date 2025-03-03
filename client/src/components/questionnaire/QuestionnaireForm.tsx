@@ -18,7 +18,7 @@ export function QuestionnaireForm() {
   const initialQuestion = parseInt(queryParams.get('question') || '1');
 
   const [currentQuestionId, setCurrentQuestionId] = useState(initialQuestion);
-  const [transcriptions, setTranscriptions] = useState<string[]>([]);
+  const [transcriptionsByQuestion, setTranscriptionsByQuestion] = useState<Record<number, string[]>>({});
   const [_, setLocation] = useLocation();
 
   // Fetch questions
@@ -30,16 +30,12 @@ export function QuestionnaireForm() {
   const { data: userResponses = [], isLoading: responsesLoading } = useQuery<Response[]>({
     queryKey: ['/api/user/responses'],
     onSuccess: (data) => {
-      const currentResponse = data.find(r => r.questionId === currentQuestionId);
-      if (currentResponse) {
-        setTranscriptions(currentResponse.transcriptions || []);
-        form.reset({
-          questionId: currentQuestionId,
-          textResponse: currentResponse.textResponse || "",
-          audioUrl: currentResponse.audioUrl || "",
-          transcriptions: currentResponse.transcriptions || [],
-        });
-      }
+      // Initialize transcriptions for all existing responses
+      const transcriptions: Record<number, string[]> = {};
+      data.forEach(response => {
+        transcriptions[response.questionId] = response.transcriptions || [];
+      });
+      setTranscriptionsByQuestion(transcriptions);
     }
   });
 
@@ -50,17 +46,16 @@ export function QuestionnaireForm() {
     resolver: zodResolver(insertResponseSchema),
     defaultValues: {
       questionId: currentQuestionId,
-      textResponse: "",
-      audioUrl: "",
-      transcriptions: [],
-    }
+      textResponse: currentResponse?.textResponse || "",
+      audioUrl: currentResponse?.audioUrl || "",
+      transcriptions: currentResponse?.transcriptions || [],
+    },
   });
 
   // Effect to handle response changes when switching questions
   useEffect(() => {
     if (currentResponse) {
       console.log('Loading response for question:', currentQuestionId, currentResponse);
-      setTranscriptions(currentResponse.transcriptions || []);
       form.reset({
         questionId: currentQuestionId,
         textResponse: currentResponse.textResponse || "",
@@ -101,6 +96,8 @@ export function QuestionnaireForm() {
         title: "Response Saved",
         description: "Your response has been saved successfully",
       });
+      // After saving, redirect to dashboard
+      setLocation('/dashboard');
     },
     onError: (error) => {
       toast({
@@ -116,8 +113,11 @@ export function QuestionnaireForm() {
   });
 
   const handleTranscription = (text: string) => {
-    const newTranscriptions = [...transcriptions, text];
-    setTranscriptions(newTranscriptions);
+    const newTranscriptions = [...(transcriptionsByQuestion[currentQuestionId] || []), text];
+    setTranscriptionsByQuestion(prev => ({
+      ...prev,
+      [currentQuestionId]: newTranscriptions
+    }));
     form.setValue('transcriptions', newTranscriptions);
   };
 
@@ -125,12 +125,30 @@ export function QuestionnaireForm() {
     const dataToSave = {
       ...data,
       questionId: currentQuestionId,
-      transcriptions,
+      transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
     };
 
     console.log('Submitting form data:', dataToSave);
     saveResponse(dataToSave);
   });
+
+  const handleNextQuestion = () => {
+    // Save current question's data first
+    handleSave();
+
+    // Clear form for next question
+    const nextQuestionId = Math.min(questions.length || 8, currentQuestionId + 1);
+    setCurrentQuestionId(nextQuestionId);
+
+    // Reset form with next question's existing response or empty state
+    const nextResponse = userResponses.find(r => r.questionId === nextQuestionId);
+    form.reset({
+      questionId: nextQuestionId,
+      textResponse: nextResponse?.textResponse || "",
+      audioUrl: nextResponse?.audioUrl || "",
+      transcriptions: nextResponse?.transcriptions || [],
+    });
+  };
 
   if (questionsLoading || responsesLoading) {
     return <div>Loading...</div>;
@@ -166,11 +184,11 @@ export function QuestionnaireForm() {
                   onTranscription={handleTranscription}
                 />
 
-                {transcriptions.length > 0 && (
+                {(transcriptionsByQuestion[currentQuestionId] || []).length > 0 && (
                   <div className="mt-4 space-y-2">
                     <h3 className="font-medium">Transcriptions:</h3>
                     <div className="space-y-2">
-                      {transcriptions.map((text, index) => (
+                      {(transcriptionsByQuestion[currentQuestionId] || []).map((text, index) => (
                         <div key={index} className="p-3 bg-gray-50 rounded">
                           <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
                           <p className="mt-1 text-gray-700">{text}</p>
@@ -202,7 +220,7 @@ export function QuestionnaireForm() {
 
                   <Button
                     type="button"
-                    onClick={() => setCurrentQuestionId(id => Math.min(questions.length || 8, id + 1))}
+                    onClick={handleNextQuestion}
                     disabled={currentQuestionId === (questions.length || 8)}
                   >
                     Next Question
