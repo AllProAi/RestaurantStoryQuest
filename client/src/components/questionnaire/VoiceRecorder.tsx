@@ -10,14 +10,19 @@ interface VoiceRecorderProps {
   onTranscription: (text: string) => void;
 }
 
+interface Recording {
+  url: string;
+  transcription: string;
+  isPlaying: boolean;
+}
+
 export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
-  const audioElement = useRef<HTMLAudioElement | null>(null);
+  const audioElements = useRef<HTMLAudioElement[]>([]);
 
   const startRecording = async () => {
     try {
@@ -35,11 +40,6 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
         try {
           const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
           const url = URL.createObjectURL(audioBlob);
-          setAudioUrl(url);
-
-          if (audioElement.current) {
-            audioElement.current.src = url;
-          }
 
           // Transcribe the audio
           console.log('Starting transcription of recording...');
@@ -47,7 +47,16 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           console.log('Received transcription:', transcribedText);
 
           if (transcribedText) {
+            // Add new recording to the list
+            setRecordings(prev => [...prev, {
+              url,
+              transcription: transcribedText,
+              isPlaying: false
+            }]);
+
+            // Add transcription to form field
             onTranscription(transcribedText);
+
             toast({
               title: language === "en" ? "Recording transcribed" : "Recording done",
               description: language === "en" ? 
@@ -91,79 +100,109 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
     }
   };
 
-  const togglePlayback = () => {
-    if (!audioElement.current) return;
+  const togglePlayback = (index: number) => {
+    if (!audioElements.current[index]) return;
 
-    if (isPlaying) {
-      audioElement.current.pause();
+    const audio = audioElements.current[index];
+    const isCurrentlyPlaying = !audio.paused;
+
+    // Pause all other recordings
+    audioElements.current.forEach((otherAudio, i) => {
+      if (i !== index && !otherAudio.paused) {
+        otherAudio.pause();
+        setRecordings(prev => prev.map((rec, idx) => 
+          idx === i ? { ...rec, isPlaying: false } : rec
+        ));
+      }
+    });
+
+    // Toggle current recording
+    if (isCurrentlyPlaying) {
+      audio.pause();
     } else {
-      audioElement.current.play();
+      audio.play();
     }
-    setIsPlaying(!isPlaying);
+
+    setRecordings(prev => prev.map((rec, idx) => 
+      idx === index ? { ...rec, isPlaying: !isCurrentlyPlaying } : rec
+    ));
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <audio 
-        ref={audioElement} 
-        onEnded={() => setIsPlaying(false)}
-        className="hidden"
-      />
-
-      {!isRecording ? (
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            onClick={startRecording}
-            className="bg-red-500 hover:bg-red-600"
-            disabled={isProcessing}
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        {!isRecording ? (
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              onClick={startRecording}
+              className="bg-red-500 hover:bg-red-600"
+              disabled={isProcessing}
+            >
+              <Mic className="w-4 h-4 mr-2" />
+              {language === "en" ? "Record Your Story" : "Record Yu Story"}
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.div 
+            whileHover={{ scale: 1.05 }} 
+            whileTap={{ scale: 0.95 }}
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ repeat: Infinity, duration: 1 }}
           >
-            <Mic className="w-4 h-4 mr-2" />
-            {language === "en" ? "Record Your Story" : "Record Yu Story"}
-          </Button>
-        </motion.div>
-      ) : (
-        <motion.div 
-          whileHover={{ scale: 1.05 }} 
-          whileTap={{ scale: 0.95 }}
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 1 }}
-        >
-          <Button
-            onClick={stopRecording}
-            variant="destructive"
-          >
-            <Square className="w-4 h-4 mr-2" />
-            {language === "en" ? "Stop Recording" : "Stop Di Recording"}
-          </Button>
-        </motion.div>
-      )}
+            <Button
+              onClick={stopRecording}
+              variant="destructive"
+            >
+              <Square className="w-4 h-4 mr-2" />
+              {language === "en" ? "Stop Recording" : "Stop Di Recording"}
+            </Button>
+          </motion.div>
+        )}
 
-      {audioUrl && !isRecording && !isProcessing && (
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-        >
-          <Button
-            onClick={togglePlayback}
-            variant="outline"
-            className="border-green-600 text-green-600 hover:bg-green-50"
-          >
-            {isPlaying ? (
-              <Pause className="w-4 h-4 mr-2" />
-            ) : (
-              <Play className="w-4 h-4 mr-2" />
-            )}
-            {language === "en" ? "Play Recording" : "Play Di Recording"}
-          </Button>
-        </motion.div>
-      )}
+        {isProcessing && (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            {language === "en" ? "Processing..." : "Working pon it..."}
+          </div>
+        )}
+      </div>
 
-      {isProcessing && (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          {language === "en" ? "Processing..." : "Working pon it..."}
-        </div>
-      )}
+      {/* Recordings list */}
+      <div className="space-y-4">
+        {recordings.map((recording, index) => (
+          <div key={recording.url} className="border rounded-lg p-4 bg-white">
+            <div className="flex items-center gap-4 mb-2">
+              <audio 
+                ref={el => {
+                  if (el) audioElements.current[index] = el;
+                }}
+                src={recording.url}
+                onEnded={() => setRecordings(prev => prev.map((rec, idx) => 
+                  idx === index ? { ...rec, isPlaying: false } : rec
+                ))}
+                className="hidden"
+              />
+              <Button
+                onClick={() => togglePlayback(index)}
+                variant="outline"
+                className="border-green-600 text-green-600 hover:bg-green-50"
+              >
+                {recording.isPlaying ? (
+                  <Pause className="w-4 h-4 mr-2" />
+                ) : (
+                  <Play className="w-4 h-4 mr-2" />
+                )}
+                {language === "en" ? `Recording ${index + 1}` : `Recording ${index + 1}`}
+              </Button>
+            </div>
+
+            {/* Transcription display */}
+            <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+              {recording.transcription}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
