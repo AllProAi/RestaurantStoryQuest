@@ -103,7 +103,7 @@ export default function Dashboard() {
 
   const handleExportMarkdown = () => {
     // Create markdown content
-    let markdownContent = `# Jamaican Restaurant Stories Export\n\n`;
+    let markdownContent = `# Jamaican Spicy Bar and Grill Stories Export\n\n`;
     markdownContent += `Generated on: ${new Date().toLocaleString()}\n\n`;
 
     responses.forEach((response, responseIndex) => {
@@ -125,13 +125,21 @@ export default function Dashboard() {
             // Split response into typed content and transcriptions
             const parts = fieldResponse.split('\n\n');
 
-            parts.forEach((part, index) => {
-              if (index === 0) {
-                markdownContent += `**Typed Response:**\n${part}\n\n`;
-              } else {
-                markdownContent += `**Recording ${index}:**\n${part}\n\n`;
+            if (parts.length > 0) {
+              if (parts[0].trim()) {
+                markdownContent += `**Written Response:**\n${parts[0].trim()}\n\n`;
               }
-            });
+
+              // Add transcriptions if they exist (parts after the first one are transcriptions)
+              if (parts.length > 1) {
+                markdownContent += `**Audio Recordings:**\n\n`;
+                parts.slice(1).forEach((transcription, index) => {
+                  if (transcription.trim()) {
+                    markdownContent += `*Recording ${index + 1}:*\n${transcription.trim()}\n\n`;
+                  }
+                });
+              }
+            }
           } else {
             markdownContent += `*No response provided*\n\n`;
           }
