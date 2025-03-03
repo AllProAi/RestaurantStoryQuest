@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SunIcon, Flower2, Bird, Music, Leaf, Heart, Star } from "lucide-react";
 
@@ -37,6 +37,13 @@ const floatingAnimation = {
 };
 
 export function Layout({ children }: LayoutProps) {
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, []);
+
   return (
     <motion.div 
       className="min-h-screen bg-gradient-to-b from-[#FFF5E1] to-[#FFE4B5]"
