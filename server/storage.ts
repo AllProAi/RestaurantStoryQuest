@@ -92,12 +92,12 @@ export class PostgresStorage implements IStorage {
     console.log('Getting responses for user:', userId);
 
     try {
-      const responses = await db.select()
+      const userResponses = await db.select()
         .from(responses)
         .where(eq(responses.userId, userId));
 
-      console.log('Found responses:', responses);
-      return responses;
+      console.log('Found responses:', userResponses);
+      return userResponses;
     } catch (error) {
       console.error('Error getting responses:', error);
       throw error;
@@ -105,10 +105,8 @@ export class PostgresStorage implements IStorage {
   }
 }
 
-// Initialize storage instance
 export const storage = new PostgresStorage();
 
-// Add initialization for default users
 async function initializeDefaultUsers() {
   // Create admin user
   const adminExists = await storage.getUserByUsername('Administrator');
