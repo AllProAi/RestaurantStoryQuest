@@ -72,4 +72,30 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Add initialization for default users
+async function initializeDefaultUsers() {
+  // Create admin user
+  const adminExists = await storage.getUserByEmail('Administrator');
+  if (!adminExists) {
+    await storage.createUser({
+      email: 'Administrator',
+      password: 'Testing1234@',
+      name: 'Administrator',
+      confirmPassword: 'Testing1234@',
+    });
+  }
+
+  // Create regular user
+  const userExists = await storage.getUserByEmail('JamaicanSpicy');
+  if (!userExists) {
+    await storage.createUser({
+      email: 'JamaicanSpicy',
+      password: 'TempPass@STX',
+      name: 'Jamaican Spicy',
+      confirmPassword: 'TempPass@STX',
+    });
+  }
+}
+
 export const storage = new MemStorage();
+initializeDefaultUsers().catch(console.error);

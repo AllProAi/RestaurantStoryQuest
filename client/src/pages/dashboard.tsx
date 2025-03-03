@@ -10,6 +10,7 @@ import type { QuestionnaireResponse } from "@shared/schema";
 export default function Dashboard() {
   const [responses, setResponses] = useState<QuestionnaireResponse[]>([]);
   const [_, setLocation] = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -17,6 +18,10 @@ export default function Dashboard() {
       setLocation('/login');
       return;
     }
+
+    // Check if user is admin
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    setIsAdmin(user.role === 'admin');
 
     fetchResponses();
   }, []);
@@ -97,16 +102,18 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-[#006400]">
-            Your Stories Dashboard
+            {isAdmin ? 'Admin Dashboard' : 'Your Stories Dashboard'}
           </h1>
           <div className="flex gap-4">
-            <Button
-              onClick={handleExport}
-              className="bg-[#009B3A] hover:bg-[#006400]"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Stories
-            </Button>
+            {isAdmin && (
+              <Button
+                onClick={handleExport}
+                className="bg-[#009B3A] hover:bg-[#006400]"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export All Stories
+              </Button>
+            )}
             <Button
               onClick={handleLogout}
               variant="outline"

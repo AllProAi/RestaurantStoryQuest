@@ -161,7 +161,7 @@ export default function Landing() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Link href="/questionnaire">
+          <Link href="/login">
             <Button 
               size="lg" 
               className="bg-[#009B3A] hover:bg-[#006400] text-white px-8 py-6 text-xl"
