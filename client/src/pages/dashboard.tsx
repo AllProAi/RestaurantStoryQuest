@@ -4,11 +4,12 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
-import { Download, LogOut, Play, Pause } from "lucide-react";
-import type { Response } from "@shared/schema";
+import { Download, LogOut, Play, Pause, Edit } from "lucide-react";
+import type { Response, Question } from "@shared/schema";
 
 export default function Dashboard() {
   const [responses, setResponses] = useState<Response[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [_, setLocation] = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
@@ -23,14 +24,32 @@ export default function Dashboard() {
     // Check if user is admin
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setIsAdmin(user.role === 'admin');
-    console.log('User role:', user.role);
 
     fetchResponses();
+    fetchQuestions();
   }, []);
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await fetch('/api/questions', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch questions');
+      }
+
+      const data = await response.json();
+      setQuestions(data);
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+    }
+  };
 
   const fetchResponses = async () => {
     try {
-      console.log('Fetching responses...');
       const response = await fetch('/api/user/responses', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -42,7 +61,6 @@ export default function Dashboard() {
       }
 
       const data = await response.json();
-      console.log('Fetched responses:', data);
       setResponses(data);
     } catch (error) {
       console.error('Error fetching responses:', error);
@@ -61,7 +79,6 @@ export default function Dashboard() {
       const audio = document.getElementById(audioUrl) as HTMLAudioElement;
       audio?.pause();
     } else {
-      // Stop any currently playing audio
       if (playingAudio) {
         const currentAudio = document.getElementById(playingAudio) as HTMLAudioElement;
         currentAudio?.pause();
@@ -72,75 +89,17 @@ export default function Dashboard() {
     }
   };
 
-  const handleExportCSV = async () => {
-    // Create CSV content
-    const csvContent = responses.map(response => ({
-      'Text Response': response.textResponse || '',
-      'Audio URL': response.audioUrl || '',
-      'Transcription': response.transcription || '',
-    }));
-
-    // Convert to CSV
-    const headers = Object.keys(csvContent[0]);
-    const csvRows = [
-      headers.join(','),
-      ...csvContent.map(row => headers.map(header => `"${row[header]}"`).join(','))
-    ];
-    const csvString = csvRows.join('\n');
-
-    // Create and download file
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `stories_export_${new Date().toISOString()}.csv`;
-    link.click();
+  const editResponse = (questionId: number) => {
+    setLocation(`/questionnaire?question=${questionId}`);
   };
-
-  const handleExportMarkdown = () => {
-    let markdownContent = `# Jamaican Spicy Bar and Grill Stories Export\n\n`;
-    markdownContent += `Generated on: ${new Date().toLocaleString()}\n\n`;
-
-    responses.forEach((response, responseIndex) => {
-      markdownContent += `## Response #${responseIndex + 1}\n\n`;
-      markdownContent += `- Text Response: ${response.textResponse || "*No response provided*" }\n`;
-      markdownContent += `- Audio URL: ${response.audioUrl || "*No audio provided*" }\n`;
-      markdownContent += `- Transcription: ${response.transcription || "*No transcription provided*" }\n\n`;
-      markdownContent += `---\n\n`;
-    });
-
-    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `stories_export_${new Date().toISOString()}.md`;
-    link.click();
-  };
-
 
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-[#006400]">
-            {isAdmin ? 'Admin Dashboard' : 'Your Story Responses'}
+            Your Story Responses
           </h1>
-          {isAdmin && (
-            <>
-              <Button
-                onClick={handleExportMarkdown}
-                className="bg-[#009B3A] hover:bg-[#006400]"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Export as Markdown
-              </Button>
-              <Button
-                onClick={handleExportCSV}
-                className="bg-[#009B3A] hover:bg-[#006400]"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export as CSV
-              </Button>
-            </>
-          )}
           <Button
             onClick={handleLogout}
             variant="outline"
@@ -159,58 +118,75 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           ) : (
-            responses.map((response, index) => (
-              <motion.div
-                key={response.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card>
-                  <CardHeader>
-                    <h2 className="text-xl font-semibold">
-                      Response #{response.id}
-                    </h2>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Text Response */}
+            responses.map((response) => {
+              const question = questions.find(q => q.id === response.questionId);
+              return (
+                <motion.div
+                  key={response.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardHeader className="flex flex-row justify-between items-center">
                       <div>
-                        <h3 className="font-medium mb-2">Written Response:</h3>
-                        <p className="text-gray-700">{response.textResponse}</p>
+                        <h2 className="text-xl font-semibold">
+                          Question {response.questionId}:
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {question?.text}
+                        </p>
                       </div>
-
-                      {/* Audio Recording */}
-                      {response.audioUrl && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => editResponse(response.questionId)}
+                        className="text-green-600 border-green-600 hover:bg-green-50"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Response
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {/* Text Response */}
                         <div>
-                          <h3 className="font-medium mb-2">Audio Recording:</h3>
-                          <audio id={response.audioUrl} src={response.audioUrl} className="hidden" />
-                          <Button
-                            onClick={() => handlePlayAudio(response.audioUrl!)}
-                            variant="outline"
-                            size="sm"
-                          >
-                            {playingAudio === response.audioUrl ? (
-                              <><Pause className="w-4 h-4 mr-2" /> Pause</>
-                            ) : (
-                              <><Play className="w-4 h-4 mr-2" /> Play Recording</>
-                            )}
-                          </Button>
+                          <h3 className="font-medium mb-2">Written Response:</h3>
+                          <p className="text-gray-700">{response.textResponse}</p>
                         </div>
-                      )}
 
-                      {/* Transcription */}
-                      {response.transcription && (
-                        <div>
-                          <h3 className="font-medium mb-2">Transcription:</h3>
-                          <p className="text-gray-700">{response.transcription}</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))
+                        {/* Audio Recording */}
+                        {response.audioUrl && (
+                          <div>
+                            <h3 className="font-medium mb-2">Audio Recording:</h3>
+                            <audio id={response.audioUrl} src={response.audioUrl} className="hidden" />
+                            <Button
+                              onClick={() => handlePlayAudio(response.audioUrl!)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              {playingAudio === response.audioUrl ? (
+                                <><Pause className="w-4 h-4 mr-2" /> Pause</>
+                              ) : (
+                                <><Play className="w-4 h-4 mr-2" /> Play Recording</>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Transcription */}
+                        {response.transcription && (
+                          <div>
+                            <h3 className="font-medium mb-2">Transcription:</h3>
+                            <p className="text-gray-700">{response.transcription}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })
           )}
         </div>
       </div>

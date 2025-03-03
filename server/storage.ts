@@ -73,13 +73,13 @@ export class PostgresStorage implements IStorage {
         .limit(1);
 
       if (existingResponse.length > 0) {
-        // Update existing response
+        // Update existing response, preserving existing values if new ones aren't provided
         console.log('Updating existing response:', existingResponse[0].id);
         const [updatedResponse] = await db.update(responses)
           .set({
-            textResponse: response.textResponse || existingResponse[0].textResponse,
-            audioUrl: response.audioUrl || existingResponse[0].audioUrl,
-            transcription: response.transcription || existingResponse[0].transcription,
+            textResponse: response.textResponse ?? existingResponse[0].textResponse,
+            audioUrl: response.audioUrl ?? existingResponse[0].audioUrl,
+            transcription: response.transcription ?? existingResponse[0].transcription,
           })
           .where(eq(responses.id, existingResponse[0].id))
           .returning();
@@ -93,9 +93,9 @@ export class PostgresStorage implements IStorage {
           .values({
             questionId: response.questionId,
             userId: response.userId,
-            textResponse: response.textResponse,
-            audioUrl: response.audioUrl,
-            transcription: response.transcription,
+            textResponse: response.textResponse || '',
+            audioUrl: response.audioUrl || '',
+            transcription: response.transcription || '',
           })
           .returning();
 

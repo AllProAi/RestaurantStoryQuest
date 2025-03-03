@@ -13,7 +13,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { queryClient } from "@/lib/queryClient";
 
 export function QuestionnaireForm() {
-  const [currentQuestionId, setCurrentQuestionId] = useState(1);
+  const [location] = useLocation();
+  const queryParams = new URLSearchParams(location.split('?')[1]);
+  const initialQuestion = parseInt(queryParams.get('question') || '1');
+
+  const [currentQuestionId, setCurrentQuestionId] = useState(initialQuestion);
   const [_, setLocation] = useLocation();
 
   // Fetch questions
