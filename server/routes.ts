@@ -67,12 +67,20 @@ export async function registerRoutes(app: Express) {
   app.post("/api/responses", authenticateToken, async (req, res) => {
     try {
       const data = insertResponseSchema.parse(req.body);
+      console.log('Creating response with data:', {
+        ...data,
+        userId: req.user.id
+      });
+
       const response = await storage.createResponse({
         ...data,
         userId: req.user.id
       });
+
+      console.log('Created response:', response);
       res.json(response);
     } catch (error) {
+      console.error('Error creating response:', error);
       res.status(400).json({ error: "Invalid request data" });
     }
   });
@@ -92,7 +100,9 @@ export async function registerRoutes(app: Express) {
   });
 
   app.get("/api/user/responses", authenticateToken, async (req, res) => {
+    console.log('Fetching responses for user:', req.user.id);
     const responses = await storage.getResponsesByUser(req.user.id);
+    console.log('Found responses:', responses);
     res.json(responses);
   });
 

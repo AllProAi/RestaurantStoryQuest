@@ -51,13 +51,15 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async createResponse(response: InsertResponse): Promise<QuestionnaireResponse> {
+  async createResponse(response: InsertResponse & { userId: number }): Promise<QuestionnaireResponse> {
     const id = this.currentResponseId++;
-    const newResponse = {
+    const newResponse: QuestionnaireResponse = {
       ...response,
       id,
       lastSaved: new Date(),
     };
+
+    console.log('Creating response:', { id, userId: response.userId, newResponse });
     this.responses.set(id, newResponse);
     return newResponse;
   }
@@ -67,6 +69,8 @@ export class MemStorage implements IStorage {
   }
 
   async getResponsesByUser(userId: number): Promise<QuestionnaireResponse[]> {
+    console.log('Getting responses for user:', userId);
+    console.log('All responses:', Array.from(this.responses.entries()));
     return Array.from(this.responses.values())
       .filter(response => response.userId === userId);
   }
