@@ -25,10 +25,28 @@ export function QuestionnaireForm() {
     },
   });
 
-  const { mutate: saveResponse } = useMutation({
+  const { mutate: saveResponse, isPending } = useMutation({
     mutationFn: async (data: InsertResponse) => {
-      const res = await apiRequest("POST", "/api/responses", data);
-      return res.json();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('/api/responses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save response');
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -36,6 +54,18 @@ export function QuestionnaireForm() {
         description: language === "en" ? "Your responses have been saved" : "Wi keep yu answers safe",
       });
     },
+    onError: (error) => {
+      toast({
+        title: language === "en" ? "Save Failed" : "Save nuh work",
+        description: error instanceof Error ? error.message : "Failed to save responses",
+        variant: "destructive",
+      });
+
+      // If token is invalid, redirect to login
+      if (error instanceof Error && error.message.includes('token')) {
+        setLocation('/login');
+      }
+    }
   });
 
   const handleSave = form.handleSubmit((data) => {
@@ -51,8 +81,14 @@ export function QuestionnaireForm() {
         >
           {language === "en" ? "Switch to Patois" : "Switch to English"}
         </Button>
-        <Button onClick={handleSave}>
-          {language === "en" ? "Save Progress" : "Save it up"}
+        <Button 
+          onClick={handleSave}
+          disabled={isPending}
+        >
+          {isPending 
+            ? (language === "en" ? "Saving..." : "Saving...") 
+            : (language === "en" ? "Save Progress" : "Save it up")
+          }
         </Button>
       </div>
 
