@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { insertResponseSchema, type InsertResponse } from "@shared/schema";
+import { insertResponseSchema, type InsertResponse, type Response, type Question } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
@@ -22,17 +22,19 @@ export function QuestionnaireForm() {
   const [_, setLocation] = useLocation();
 
   // Fetch questions
-  const { data: questions = [], isLoading: questionsLoading } = useQuery({
+  const { data: questions = [], isLoading: questionsLoading } = useQuery<Question[]>({
     queryKey: ['/api/questions'],
   });
 
   // Fetch user responses
-  const { data: userResponses = [], isLoading: responsesLoading } = useQuery({
+  const { data: userResponses = [], isLoading: responsesLoading } = useQuery<Response[]>({
     queryKey: ['/api/user/responses'],
   });
 
+  // Find current response
   const currentResponse = userResponses.find(r => r.questionId === currentQuestionId);
 
+  // Initialize form with current response data if it exists
   const form = useForm<InsertResponse>({
     resolver: zodResolver(insertResponseSchema),
     defaultValues: {
@@ -41,21 +43,13 @@ export function QuestionnaireForm() {
       audioUrl: currentResponse?.audioUrl || "",
       transcriptions: currentResponse?.transcriptions || [],
     },
-  });
-
-  // Update form when response changes
-  useEffect(() => {
-    if (currentResponse) {
-      console.log('Loading existing response:', currentResponse);
-      form.reset({
-        questionId: currentQuestionId,
-        textResponse: currentResponse.textResponse || "",
-        audioUrl: currentResponse.audioUrl || "",
-        transcriptions: currentResponse.transcriptions || [],
-      });
-      setTranscriptions(currentResponse.transcriptions || []);
+    values: {
+      questionId: currentQuestionId,
+      textResponse: currentResponse?.textResponse || "",
+      audioUrl: currentResponse?.audioUrl || "",
+      transcriptions: currentResponse?.transcriptions || [],
     }
-  }, [currentQuestionId, currentResponse, form]);
+  });
 
   const { mutate: saveResponse, isPending } = useMutation({
     mutationFn: async (data: InsertResponse) => {
@@ -83,7 +77,6 @@ export function QuestionnaireForm() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate both queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['/api/user/responses'] });
       queryClient.invalidateQueries({ queryKey: ['/api/responses'] });
 
@@ -106,7 +99,6 @@ export function QuestionnaireForm() {
   });
 
   const handleTranscription = (text: string) => {
-    console.log('Adding new transcription:', text);
     const newTranscriptions = [...transcriptions, text];
     setTranscriptions(newTranscriptions);
     form.setValue('transcriptions', newTranscriptions);
@@ -157,7 +149,6 @@ export function QuestionnaireForm() {
                   onTranscription={handleTranscription}
                 />
 
-                {/* Display all transcriptions */}
                 {transcriptions.length > 0 && (
                   <div className="mt-4 space-y-2">
                     <h3 className="font-medium">Transcriptions:</h3>
