@@ -26,8 +26,22 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder.current = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 2,
+          sampleRate: 48000,
+          sampleSize: 16,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      mediaRecorder.current = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: 128000 // 128 kbps for high quality audio
+      });
+
       audioChunks.current = [];
 
       mediaRecorder.current.ondataavailable = (event) => {
