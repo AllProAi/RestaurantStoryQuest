@@ -22,6 +22,44 @@ export function QuestionnaireForm() {
     defaultValues: {
       language: "en",
       mediaUrls: [],
+      personalJourney: {
+        childhood: "",
+        immigration: "",
+        challenges: "",
+        familyRecipes: "",
+        influences: "",
+        customs: "",
+      },
+      culinaryHeritage: {
+        signatureDishes: "",
+        ingredients: "",
+        techniques: "",
+        recipeEvolution: "",
+        fusion: "",
+        menuPhilosophy: "",
+      },
+      businessDevelopment: {
+        inspiration: "",
+        timeline: "",
+        vision: "",
+        challenges: "",
+        achievements: "",
+        aspirations: "",
+      },
+      communityConnections: {
+        customers: "",
+        localBusiness: "",
+        events: "",
+        economy: "",
+        jamaicanCommunity: "",
+      },
+      visualPreferences: {
+        colors: [],
+        imagery: "",
+        symbols: "",
+        atmosphere: "",
+        tone: "",
+      },
     },
   });
 
@@ -69,16 +107,11 @@ export function QuestionnaireForm() {
   });
 
   const handleSave = form.handleSubmit((data) => {
-    console.log('Saving form data:', data);
+    console.log('Form data before save:', data);
     saveResponse({ 
       ...data,
-      personalJourney: data.personalJourney || null,
-      culinaryHeritage: data.culinaryHeritage || null,
-      businessDevelopment: data.businessDevelopment || null,
-      communityConnections: data.communityConnections || null,
-      visualPreferences: data.visualPreferences || null,
+      language,
       mediaUrls: data.mediaUrls || [],
-      language 
     });
   });
 
