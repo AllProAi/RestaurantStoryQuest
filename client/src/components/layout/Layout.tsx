@@ -165,7 +165,7 @@ export function Layout({ children }: LayoutProps) {
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-4xl md:text-5xl font-bold mb-2 font-serif">
-              Jamaican Restaurant Story
+              Jamaican Spicy Bar and Grill
             </h1>
             <p className="text-lg md:text-xl text-yellow-200 font-light">
               Share Your Journey from Jamaica to Success

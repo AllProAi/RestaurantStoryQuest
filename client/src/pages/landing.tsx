@@ -71,11 +71,11 @@ export default function Landing() {
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-4xl md:text-6xl font-bold text-[#006400] mb-6">
-            Share Your Jamaican Restaurant Story
+            Share Your Jamaican Spicy Bar and Grill Story
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             We're creating a unique digital experience that celebrates your journey from Jamaica 
-            to successful restaurant ownership in the US Virgin Islands. Your story will inspire 
+            to establishing the Jamaican Spicy Bar and Grill in the US Virgin Islands. Your story will inspire 
             and connect with customers in meaningful ways.
           </p>
         </motion.div>
