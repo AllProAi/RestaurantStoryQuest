@@ -43,6 +43,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
 
           // Transcribe the audio
           const transcribedText = await transcribeAudio(audioBlob);
+          console.log('Received transcription:', transcribedText);
           onTranscription(transcribedText);
 
           toast({
@@ -52,6 +53,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
               "Press play fi listen back",
           });
         } catch (error) {
+          console.error('Error processing recording:', error);
           toast({
             title: language === "en" ? "Recording failed" : "Recording nuh work",
             description: language === "en" ? 

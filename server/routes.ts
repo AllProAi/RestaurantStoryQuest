@@ -53,6 +53,7 @@ export async function registerRoutes(app: Express) {
           model: 'whisper-1',
         });
 
+        console.log('Transcription result:', transcription.text);
         res.json({ text: transcription.text });
       } finally {
         // Clean up the temporary file
