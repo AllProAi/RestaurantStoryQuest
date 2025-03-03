@@ -18,6 +18,7 @@ export function QuestionnaireForm() {
   const initialQuestion = parseInt(queryParams.get('question') || '1');
 
   const [currentQuestionId, setCurrentQuestionId] = useState(initialQuestion);
+  const [transcriptions, setTranscriptions] = useState<string[]>([]);
   const [_, setLocation] = useLocation();
 
   // Fetch questions
@@ -37,25 +38,27 @@ export function QuestionnaireForm() {
       questionId: currentQuestionId,
       textResponse: "",
       audioUrl: "",
-      transcription: "",
+      transcriptions: [],
     },
   });
 
   // Update form with existing response data when available
   useEffect(() => {
     if (currentResponse) {
+      setTranscriptions(currentResponse.transcriptions || []);
       form.reset({
         questionId: currentQuestionId,
         textResponse: currentResponse.textResponse || "",
         audioUrl: currentResponse.audioUrl || "",
-        transcription: currentResponse.transcription || "",
+        transcriptions: currentResponse.transcriptions || [],
       });
     } else {
+      setTranscriptions([]);
       form.reset({
         questionId: currentQuestionId,
         textResponse: "",
         audioUrl: "",
-        transcription: "",
+        transcriptions: [],
       });
     }
   }, [currentQuestionId, currentResponse, form]);
@@ -106,19 +109,23 @@ export function QuestionnaireForm() {
   });
 
   const handleTranscription = (text: string) => {
-    console.log('Setting transcription:', text);
-    form.setValue('transcription', text);
+    console.log('Adding new transcription:', text);
+    const newTranscriptions = [...transcriptions, text];
+    setTranscriptions(newTranscriptions);
+    form.setValue('transcriptions', newTranscriptions);
   };
 
   const handleSave = form.handleSubmit((data) => {
     console.log('Submitting form data:', {
       ...data,
       questionId: currentQuestionId,
+      transcriptions,
     });
 
     saveResponse({
       ...data,
       questionId: currentQuestionId,
+      transcriptions,
     });
   });
 
@@ -155,6 +162,21 @@ export function QuestionnaireForm() {
                   language="en"
                   onTranscription={handleTranscription}
                 />
+
+                {/* Display all transcriptions */}
+                {transcriptions.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <h3 className="font-medium">Transcriptions:</h3>
+                    <div className="space-y-2">
+                      {transcriptions.map((text, index) => (
+                        <div key={index} className="p-3 bg-gray-50 rounded">
+                          <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
+                          <p className="mt-1 text-gray-700">{text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between mt-8">

@@ -26,7 +26,7 @@ export const responses = pgTable("responses", {
   userId: serial("user_id").references(() => users.id),
   textResponse: text("text_response"),
   audioUrl: text("audio_url"),
-  transcription: text("transcription"),
+  transcriptions: text("transcriptions").array(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

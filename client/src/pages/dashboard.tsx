@@ -175,10 +175,17 @@ export default function Dashboard() {
                         )}
 
                         {/* Transcription */}
-                        {response.transcription && (
+                        {response.transcriptions && response.transcriptions.length > 0 && (
                           <div>
-                            <h3 className="font-medium mb-2">Transcription:</h3>
-                            <p className="text-gray-700">{response.transcription}</p>
+                            <h3 className="font-medium mb-2">Transcriptions:</h3>
+                            <div className="space-y-2">
+                              {response.transcriptions.map((text, index) => (
+                                <div key={index} className="p-3 bg-gray-50 rounded">
+                                  <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
+                                  <p className="mt-1 text-gray-700">{text}</p>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
