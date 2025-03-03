@@ -89,9 +89,9 @@ export function Layout({ children }: LayoutProps) {
         transition={{ delay: 0.5 }}
       >
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-yellow-200">© 2024 Jamaican Restaurant Story</p>
+          <p className="text-yellow-200">Daniel Hill Novus | Nexum 2025</p>
           <p className="text-sm text-gray-400 mt-2">
-            Preserving Our Culture, One Story at a Time
+            Preserving Your Culture, One Story at a Time
           </p>
         </div>
       </motion.footer>
