@@ -22,14 +22,20 @@ export function QuestionnaireForm() {
   const [_, setLocation] = useLocation();
 
   // Fetch questions
-  const { data: questions, isLoading: questionsLoading } = useQuery({
+  const { data: questions = [], isLoading: questionsLoading } = useQuery({
     queryKey: ['/api/questions'],
   });
 
   // Fetch existing response for current question
   const { data: currentResponse, isLoading: responseLoading } = useQuery({
     queryKey: ['/api/responses', currentQuestionId],
-    enabled: !!currentQuestionId,
+    select: (data: any) => {
+      // If data is an array (multiple responses), find the one for current question
+      if (Array.isArray(data)) {
+        return data.find(r => r.questionId === currentQuestionId);
+      }
+      return data;
+    }
   });
 
   const form = useForm<InsertResponse>({
@@ -46,21 +52,22 @@ export function QuestionnaireForm() {
   useEffect(() => {
     if (currentResponse) {
       console.log('Loading existing response:', currentResponse);
-      setTranscriptions(currentResponse.transcriptions || []);
       form.reset({
         questionId: currentQuestionId,
         textResponse: currentResponse.textResponse || "",
         audioUrl: currentResponse.audioUrl || "",
         transcriptions: currentResponse.transcriptions || [],
       });
+      setTranscriptions(currentResponse.transcriptions || []);
     } else {
-      setTranscriptions([]);
+      // Only reset if there's no current response
       form.reset({
         questionId: currentQuestionId,
         textResponse: "",
         audioUrl: "",
         transcriptions: [],
       });
+      setTranscriptions([]);
     }
   }, [currentQuestionId, currentResponse, form]);
 
@@ -90,6 +97,7 @@ export function QuestionnaireForm() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate both the specific response query and the responses list
       queryClient.invalidateQueries({ queryKey: ['/api/responses'] });
       toast({
         title: "Response Saved",
@@ -117,31 +125,28 @@ export function QuestionnaireForm() {
   };
 
   const handleSave = form.handleSubmit((data) => {
-    console.log('Submitting form data:', {
+    const dataToSave = {
       ...data,
       questionId: currentQuestionId,
       transcriptions,
-    });
+    };
 
-    saveResponse({
-      ...data,
-      questionId: currentQuestionId,
-      transcriptions,
-    });
+    console.log('Submitting form data:', dataToSave);
+    saveResponse(dataToSave);
   });
 
   if (questionsLoading || responseLoading) {
     return <div>Loading...</div>;
   }
 
-  const currentQuestion = questions?.find(q => q.id === currentQuestionId);
+  const currentQuestion = questions.find(q => q.id === currentQuestionId);
 
   return (
     <div className="max-w-3xl mx-auto p-6">
       <Card>
         <CardContent className="p-6">
           <h2 className="text-2xl font-bold mb-4">
-            Question {currentQuestionId} of {questions?.length || 0}
+            Question {currentQuestionId} of {questions.length || 0}
           </h2>
 
           <p className="text-lg mb-6">{currentQuestion?.text}</p>
@@ -201,8 +206,8 @@ export function QuestionnaireForm() {
 
                   <Button
                     type="button"
-                    onClick={() => setCurrentQuestionId(id => Math.min(questions?.length || 8, id + 1))}
-                    disabled={currentQuestionId === (questions?.length || 8)}
+                    onClick={() => setCurrentQuestionId(id => Math.min(questions.length || 8, id + 1))}
+                    disabled={currentQuestionId === (questions.length || 8)}
                   >
                     Next Question
                   </Button>
