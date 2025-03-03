@@ -128,7 +128,11 @@ export function Section({ section, language, form }: SectionProps) {
                           <VoiceRecorder 
                             language={language}
                             onTranscription={(text) => {
-                              formField.onChange(formField.value ? `${formField.value}\n\n${text}` : text);
+                              const currentValue = formField.value || '';
+                              const newValue = currentValue 
+                                ? `${currentValue}\n\n${text}` 
+                                : text;
+                              formField.onChange(newValue);
                             }}
                           />
                         </div>

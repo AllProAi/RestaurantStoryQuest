@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Mic, Square, Loader2, Play, Pause } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from '@/hooks/use-toast';
+import { transcribeAudio } from '@/lib/openai';
 
 interface VoiceRecorderProps {
-  onTranscription: (text: string) => void;
   language: "en" | "patois";
+  onTranscription: (text: string) => void;
 }
 
-export function VoiceRecorder({ onTranscription, language }: VoiceRecorderProps) {
+export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -39,6 +40,10 @@ export function VoiceRecorder({ onTranscription, language }: VoiceRecorderProps)
           if (audioElement.current) {
             audioElement.current.src = url;
           }
+
+          // Transcribe the audio
+          const transcribedText = await transcribeAudio(audioBlob);
+          onTranscription(transcribedText);
 
           toast({
             title: language === "en" ? "Recording saved" : "Recording done",
