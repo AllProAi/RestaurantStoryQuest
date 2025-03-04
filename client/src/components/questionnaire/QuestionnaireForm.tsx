@@ -313,36 +313,6 @@ export function QuestionnaireForm() {
                                     <Play className="w-4 h-4" />
                                   )}
                                 </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Recording</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Are you sure you want to delete this recording and its transcription?
-                                        This action cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => handleDeleteTranscription(index)}
-                                        className="bg-red-500 hover:bg-red-600"
-                                      >
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
                               </div>
                             </div>
                             <audio
@@ -358,7 +328,7 @@ export function QuestionnaireForm() {
                                   animate={{ y: 0, opacity: 1 }}
                                   exit={{ y: 20, opacity: 0 }}
                                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                  className="absolute bottom-0 left-0 transform translate-y-full"
+                                  className="absolute bottom-0 right-0 transform translate-y-full"
                                   style={{ marginTop: '5px' }}
                                 >
                                   <Button

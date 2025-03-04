@@ -325,7 +325,7 @@ export default function Dashboard() {
                                           animate={{ y: 0, opacity: 1 }}
                                           exit={{ y: 20, opacity: 0 }}
                                           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                          className="absolute bottom-0 left-0 transform translate-y-full"
+                                          className="absolute bottom-0 right-0 transform translate-y-full"
                                           style={{ marginTop: '5px' }}
                                         >
                                           <Button
