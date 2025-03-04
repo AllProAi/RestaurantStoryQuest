@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface RecordingEntry {
   audioUrl: string;
@@ -319,7 +320,7 @@ export function QuestionnaireForm() {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Delete Recording</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to delete this recording and its transcription? 
+                                    Are you sure you want to delete this recording and its transcription?
                                     This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
@@ -335,12 +336,43 @@ export function QuestionnaireForm() {
                               </AlertDialogContent>
                             </AlertDialog>
                           </div>
-                          <audio 
-                            id={recording.audioUrl}
-                            src={recording.audioUrl}
-                            className="hidden"
-                            onEnded={() => setPlayingAudio(null)}
-                          />
+
+                          {/* Audio element and restart button */}
+                          <div className="relative">
+                            <audio
+                              id={recording.audioUrl}
+                              src={recording.audioUrl}
+                              className="hidden"
+                              onEnded={() => setPlayingAudio(null)}
+                            />
+                            <AnimatePresence>
+                              {playingAudio === recording.audioUrl && (
+                                <motion.div
+                                  initial={{ y: -20, opacity: 0 }}
+                                  animate={{ y: 0, opacity: 1 }}
+                                  exit={{ y: -20, opacity: 0 }}
+                                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                  className="absolute top-full left-0 mt-2"
+                                >
+                                  <Button
+                                    onClick={() => {
+                                      setPlayingAudio(null);
+                                      const audio = document.getElementById(recording.audioUrl) as HTMLAudioElement;
+                                      if (audio) {
+                                        audio.currentTime = 0;
+                                        audio.pause();
+                                      }
+                                    }}
+                                    className="bg-green-500 hover:bg-green-600"
+                                    size="sm"
+                                  >
+                                    <Play className="w-4 h-4 mr-2" />
+                                    Restart Playback
+                                  </Button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       ))}
                     </div>

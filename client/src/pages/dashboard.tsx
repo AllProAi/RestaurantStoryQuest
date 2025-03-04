@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { LogOut, Play, Pause, Edit, Trash2 } from "lucide-react";
 import type { Response, Question } from "@shared/schema";
 import {
@@ -288,7 +288,7 @@ export default function Dashboard() {
                             <h3 className="font-medium mb-2">Transcriptions:</h3>
                             <div className="space-y-2">
                               {response.transcriptions.map((text, index) => (
-                                <div key={index} className="p-3 bg-gray-50 rounded">
+                                <div key={index} className="p-3 bg-gray-50 rounded relative">
                                   <div className="flex justify-between items-start">
                                     <div>
                                       <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
@@ -313,6 +313,33 @@ export default function Dashboard() {
                                     className="hidden"
                                     onEnded={() => setPlayingAudio(null)}
                                   />
+                                  <AnimatePresence>
+                                    {playingAudio === response.audioUrl && (
+                                      <motion.div
+                                        initial={{ y: -20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        exit={{ y: -20, opacity: 0 }}
+                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        className="absolute top-full left-0 mt-2"
+                                      >
+                                        <Button
+                                          onClick={() => {
+                                            setPlayingAudio(null);
+                                            const audio = document.getElementById(response.audioUrl!) as HTMLAudioElement;
+                                            if (audio) {
+                                              audio.currentTime = 0;
+                                              audio.pause();
+                                            }
+                                          }}
+                                          className="bg-green-500 hover:bg-green-600"
+                                          size="sm"
+                                        >
+                                          <Play className="w-4 h-4 mr-2" />
+                                          Restart Playback
+                                        </Button>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
                                 </div>
                               ))}
                             </div>
