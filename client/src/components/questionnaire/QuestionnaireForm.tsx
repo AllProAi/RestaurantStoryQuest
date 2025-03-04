@@ -35,7 +35,9 @@ export function QuestionnaireForm() {
       // Initialize transcriptions for all existing responses
       const transcriptions: Record<number, string[]> = {};
       data.forEach(response => {
-        transcriptions[response.questionId] = response.transcriptions || [];
+        if (response.transcriptions) {
+          transcriptions[response.questionId] = response.transcriptions;
+        }
       });
       setTranscriptionsByQuestion(transcriptions);
     }
@@ -98,7 +100,10 @@ export function QuestionnaireForm() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          transcriptions: transcriptionsByQuestion[data.questionId] || [],
+        })
       });
 
       if (!response.ok) {
@@ -133,13 +138,14 @@ export function QuestionnaireForm() {
     }
   });
 
-  const handleTranscription = (text: string) => {
+  const handleTranscription = (text: string, audioUrl: string) => {
     const newTranscriptions = [...(transcriptionsByQuestion[currentQuestionId] || []), text];
     setTranscriptionsByQuestion(prev => ({
       ...prev,
       [currentQuestionId]: newTranscriptions
     }));
     form.setValue('transcriptions', newTranscriptions);
+    form.setValue('audioUrl', audioUrl); // Save the audio URL
   };
 
   const handleDeleteTranscription = (indexToDelete: number) => {
@@ -151,6 +157,11 @@ export function QuestionnaireForm() {
       [currentQuestionId]: newTranscriptions
     }));
     form.setValue('transcriptions', newTranscriptions);
+
+    // If all transcriptions are deleted, clear the audio URL
+    if (newTranscriptions.length === 0) {
+      form.setValue('audioUrl', '');
+    }
 
     toast({
       title: "Transcription Deleted",
@@ -184,12 +195,13 @@ export function QuestionnaireForm() {
     const nextQuestionId = Math.min(questions.length || 8, currentQuestionId + 1);
     setCurrentQuestionId(nextQuestionId);
 
-    // Reset form for next question
+    // Reset form for next question only if there's no existing response
+    const nextResponse = userResponses.find(r => r.questionId === nextQuestionId);
     form.reset({
       questionId: nextQuestionId,
-      textResponse: "",
-      audioUrl: "",
-      transcriptions: [],
+      textResponse: nextResponse?.textResponse || "",
+      audioUrl: nextResponse?.audioUrl || "",
+      transcriptions: nextResponse?.transcriptions || [],
     });
   };
 
@@ -230,7 +242,7 @@ export function QuestionnaireForm() {
                 {/* Display saved audio recording if it exists */}
                 {currentResponse?.audioUrl && (
                   <div className="mt-4">
-                    <audio id={currentResponse.audioUrl} src={currentResponse.audioUrl} controls />
+                    <audio id={currentResponse.audioUrl} src={currentResponse.audioUrl} className="hidden" controls/>
                     <Button
                       type="button"
                       variant="outline"
