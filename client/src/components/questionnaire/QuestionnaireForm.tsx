@@ -20,6 +20,7 @@ export function QuestionnaireForm() {
 
   const [currentQuestionId, setCurrentQuestionId] = useState(initialQuestion);
   const [transcriptionsByQuestion, setTranscriptionsByQuestion] = useState<Record<number, string[]>>({});
+  const [audioUrlsByQuestion, setAudioUrlsByQuestion] = useState<Record<number, string>>({});
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [_, setLocation] = useLocation();
 
@@ -33,15 +34,23 @@ export function QuestionnaireForm() {
     queryKey: ['/api/user/responses'],
     onSuccess: (data) => {
       console.log('Fetched responses:', data);
-      // Initialize transcriptions for all existing responses
+      // Initialize transcriptions and audio URLs for all existing responses
       const transcriptions: Record<number, string[]> = {};
+      const audioUrls: Record<number, string> = {};
+
       data.forEach(response => {
         if (response.transcriptions && response.transcriptions.length > 0) {
           transcriptions[response.questionId] = response.transcriptions;
         }
+        if (response.audioUrl) {
+          audioUrls[response.questionId] = response.audioUrl;
+        }
       });
+
       console.log('Setting transcriptions state:', transcriptions);
+      console.log('Setting audioUrls state:', audioUrls);
       setTranscriptionsByQuestion(transcriptions);
+      setAudioUrlsByQuestion(audioUrls);
     }
   });
 
@@ -69,11 +78,18 @@ export function QuestionnaireForm() {
         transcriptions: currentResponse.transcriptions || [],
       });
 
-      // Ensure transcriptions are loaded into state
+      // Update both transcriptions and audio URLs in state
       if (currentResponse.transcriptions && currentResponse.transcriptions.length > 0) {
         setTranscriptionsByQuestion(prev => ({
           ...prev,
           [currentQuestionId]: currentResponse.transcriptions || []
+        }));
+      }
+
+      if (currentResponse.audioUrl) {
+        setAudioUrlsByQuestion(prev => ({
+          ...prev,
+          [currentQuestionId]: currentResponse.audioUrl || ""
         }));
       }
     }
@@ -112,6 +128,7 @@ export function QuestionnaireForm() {
         },
         body: JSON.stringify({
           ...data,
+          audioUrl: audioUrlsByQuestion[data.questionId] || "",
           transcriptions: transcriptionsByQuestion[data.questionId] || [],
         })
       });
@@ -150,13 +167,23 @@ export function QuestionnaireForm() {
 
   const handleTranscription = (text: string, audioUrl: string) => {
     console.log('New transcription:', text, 'for question:', currentQuestionId);
+    console.log('New audio URL:', audioUrl);
+
+    // Update transcriptions
     const newTranscriptions = [...(transcriptionsByQuestion[currentQuestionId] || []), text];
     setTranscriptionsByQuestion(prev => ({
       ...prev,
       [currentQuestionId]: newTranscriptions
     }));
+
+    // Update audio URLs
+    setAudioUrlsByQuestion(prev => ({
+      ...prev,
+      [currentQuestionId]: audioUrl
+    }));
+
     form.setValue('transcriptions', newTranscriptions);
-    form.setValue('audioUrl', audioUrl); // Save the audio URL
+    form.setValue('audioUrl', audioUrl);
   };
 
   const handleDeleteTranscription = (indexToDelete: number) => {
@@ -167,12 +194,18 @@ export function QuestionnaireForm() {
       ...prev,
       [currentQuestionId]: newTranscriptions
     }));
-    form.setValue('transcriptions', newTranscriptions);
 
     // If all transcriptions are deleted, clear the audio URL
     if (newTranscriptions.length === 0) {
+      setAudioUrlsByQuestion(prev => {
+        const updated = { ...prev };
+        delete updated[currentQuestionId];
+        return updated;
+      });
       form.setValue('audioUrl', '');
     }
+
+    form.setValue('transcriptions', newTranscriptions);
 
     toast({
       title: "Transcription Deleted",
@@ -184,6 +217,7 @@ export function QuestionnaireForm() {
     const dataToSave = {
       ...data,
       questionId: currentQuestionId,
+      audioUrl: audioUrlsByQuestion[currentQuestionId] || "",
       transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
       redirectToDashboard: true
     };
@@ -198,6 +232,7 @@ export function QuestionnaireForm() {
     await saveResponse({
       ...data,
       questionId: currentQuestionId,
+      audioUrl: audioUrlsByQuestion[currentQuestionId] || "",
       transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
       redirectToDashboard: false
     });
@@ -222,7 +257,7 @@ export function QuestionnaireForm() {
 
   const currentQuestion = questions.find(q => q.id === currentQuestionId);
   const hasTranscriptions = (transcriptionsByQuestion[currentQuestionId] || []).length > 0;
-  const hasAudioUrl = currentResponse?.audioUrl;
+  const hasAudioUrl = Boolean(audioUrlsByQuestion[currentQuestionId]);
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -255,15 +290,20 @@ export function QuestionnaireForm() {
                 {/* Display saved audio recording if it exists */}
                 {hasAudioUrl && (
                   <div className="mt-4">
-                    <audio id={currentResponse.audioUrl} src={currentResponse.audioUrl} className="hidden" controls/>
+                    <audio 
+                      id={audioUrlsByQuestion[currentQuestionId]} 
+                      src={audioUrlsByQuestion[currentQuestionId]} 
+                      className="hidden" 
+                      controls
+                    />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => handlePlayAudio(currentResponse.audioUrl!)}
+                      onClick={() => handlePlayAudio(audioUrlsByQuestion[currentQuestionId])}
                       className="mb-4"
                     >
-                      {playingAudio === currentResponse.audioUrl ? (
+                      {playingAudio === audioUrlsByQuestion[currentQuestionId] ? (
                         <><Pause className="w-4 h-4 mr-2" /> Pause</>
                       ) : (
                         <><Play className="w-4 h-4 mr-2" /> Play Saved Recording</>
