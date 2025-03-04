@@ -19,6 +19,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient"; // Import queryClient
+
 
 export default function Dashboard() {
   const [responses, setResponses] = useState<Response[]>([]);
@@ -125,6 +127,9 @@ export default function Dashboard() {
       if (!response.ok) {
         throw new Error('Failed to delete responses');
       }
+
+      // Invalidate the responses query to refresh both dashboard and questionnaire
+      queryClient.invalidateQueries({ queryKey: ['/api/user/responses'] });
 
       setResponses([]);
       setShowSecondConfirm(false);
