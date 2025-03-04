@@ -32,13 +32,15 @@ export function QuestionnaireForm() {
   const { data: userResponses = [], isLoading: responsesLoading } = useQuery<Response[]>({
     queryKey: ['/api/user/responses'],
     onSuccess: (data) => {
+      console.log('Fetched responses:', data);
       // Initialize transcriptions for all existing responses
       const transcriptions: Record<number, string[]> = {};
       data.forEach(response => {
-        if (response.transcriptions) {
+        if (response.transcriptions && response.transcriptions.length > 0) {
           transcriptions[response.questionId] = response.transcriptions;
         }
       });
+      console.log('Setting transcriptions state:', transcriptions);
       setTranscriptionsByQuestion(transcriptions);
     }
   });
@@ -66,8 +68,16 @@ export function QuestionnaireForm() {
         audioUrl: currentResponse.audioUrl || "",
         transcriptions: currentResponse.transcriptions || [],
       });
+
+      // Ensure transcriptions are loaded into state
+      if (currentResponse.transcriptions && currentResponse.transcriptions.length > 0) {
+        setTranscriptionsByQuestion(prev => ({
+          ...prev,
+          [currentQuestionId]: currentResponse.transcriptions || []
+        }));
+      }
     }
-  }, [currentQuestionId, currentResponse]);
+  }, [currentQuestionId, currentResponse, form]);
 
   const handlePlayAudio = (audioUrl: string) => {
     if (playingAudio === audioUrl) {
@@ -139,6 +149,7 @@ export function QuestionnaireForm() {
   });
 
   const handleTranscription = (text: string, audioUrl: string) => {
+    console.log('New transcription:', text, 'for question:', currentQuestionId);
     const newTranscriptions = [...(transcriptionsByQuestion[currentQuestionId] || []), text];
     setTranscriptionsByQuestion(prev => ({
       ...prev,
@@ -210,6 +221,8 @@ export function QuestionnaireForm() {
   }
 
   const currentQuestion = questions.find(q => q.id === currentQuestionId);
+  const hasTranscriptions = (transcriptionsByQuestion[currentQuestionId] || []).length > 0;
+  const hasAudioUrl = currentResponse?.audioUrl;
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -240,7 +253,7 @@ export function QuestionnaireForm() {
                 />
 
                 {/* Display saved audio recording if it exists */}
-                {currentResponse?.audioUrl && (
+                {hasAudioUrl && (
                   <div className="mt-4">
                     <audio id={currentResponse.audioUrl} src={currentResponse.audioUrl} className="hidden" controls/>
                     <Button
@@ -259,7 +272,8 @@ export function QuestionnaireForm() {
                   </div>
                 )}
 
-                {(transcriptionsByQuestion[currentQuestionId] || []).length > 0 && (
+                {/* Show transcription box if there are transcriptions */}
+                {hasTranscriptions && (
                   <div className="mt-4 space-y-2">
                     <h3 className="font-medium">Transcriptions:</h3>
                     <div className="space-y-2">
