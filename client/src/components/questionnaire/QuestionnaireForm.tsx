@@ -287,31 +287,6 @@ export function QuestionnaireForm() {
                   onTranscription={handleTranscription}
                 />
 
-                {/* Display saved audio recording if it exists */}
-                {hasAudioUrl && (
-                  <div className="mt-4">
-                    <audio 
-                      id={audioUrlsByQuestion[currentQuestionId]} 
-                      src={audioUrlsByQuestion[currentQuestionId]} 
-                      className="hidden" 
-                      controls
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePlayAudio(audioUrlsByQuestion[currentQuestionId])}
-                      className="mb-4"
-                    >
-                      {playingAudio === audioUrlsByQuestion[currentQuestionId] ? (
-                        <><Pause className="w-4 h-4 mr-2" /> Pause</>
-                      ) : (
-                        <><Play className="w-4 h-4 mr-2" /> Play Saved Recording</>
-                      )}
-                    </Button>
-                  </div>
-                )}
-
                 {/* Show transcription box if there are transcriptions */}
                 {hasTranscriptions && (
                   <div className="mt-4 space-y-2">
@@ -323,15 +298,35 @@ export function QuestionnaireForm() {
                             <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
                             <p className="mt-1 text-gray-700">{text}</p>
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleDeleteTranscription(index)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePlayAudio(audioUrlsByQuestion[currentQuestionId])}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              {playingAudio === audioUrlsByQuestion[currentQuestionId] ? (
+                                <Pause className="w-4 h-4" />
+                              ) : (
+                                <Play className="w-4 h-4" />
+                              )}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteTranscription(index)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <audio 
+                            id={audioUrlsByQuestion[currentQuestionId]} 
+                            src={audioUrlsByQuestion[currentQuestionId]} 
+                            className="hidden" 
+                          />
                         </div>
                       ))}
                     </div>
