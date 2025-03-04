@@ -13,14 +13,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { queryClient } from "@/lib/queryClient";
 import { Trash2, Play, Pause } from "lucide-react";
 
+interface RecordingEntry {
+  audioUrl: string;
+  transcription: string;
+}
+
 export function QuestionnaireForm() {
   const [location] = useLocation();
   const queryParams = new URLSearchParams(location.split('?')[1]);
   const initialQuestion = parseInt(queryParams.get('question') || '1');
 
   const [currentQuestionId, setCurrentQuestionId] = useState(initialQuestion);
-  const [transcriptionsByQuestion, setTranscriptionsByQuestion] = useState<Record<number, string[]>>({});
-  const [audioUrlsByQuestion, setAudioUrlsByQuestion] = useState<Record<number, string>>({});
+  const [recordingsByQuestion, setRecordingsByQuestion] = useState<Record<number, RecordingEntry[]>>({});
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [_, setLocation] = useLocation();
 
@@ -34,23 +38,20 @@ export function QuestionnaireForm() {
     queryKey: ['/api/user/responses'],
     onSuccess: (data) => {
       console.log('Fetched responses:', data);
-      // Initialize transcriptions and audio URLs for all existing responses
-      const transcriptions: Record<number, string[]> = {};
-      const audioUrls: Record<number, string> = {};
+      // Initialize recordings for all existing responses
+      const recordings: Record<number, RecordingEntry[]> = {};
 
       data.forEach(response => {
         if (response.transcriptions && response.transcriptions.length > 0) {
-          transcriptions[response.questionId] = response.transcriptions;
-        }
-        if (response.audioUrl) {
-          audioUrls[response.questionId] = response.audioUrl;
+          recordings[response.questionId] = response.transcriptions.map((text, index) => ({
+            transcription: text,
+            audioUrl: response.audioUrl || ''
+          }));
         }
       });
 
-      console.log('Setting transcriptions state:', transcriptions);
-      console.log('Setting audioUrls state:', audioUrls);
-      setTranscriptionsByQuestion(transcriptions);
-      setAudioUrlsByQuestion(audioUrls);
+      console.log('Setting recordings state:', recordings);
+      setRecordingsByQuestion(recordings);
     }
   });
 
@@ -78,18 +79,14 @@ export function QuestionnaireForm() {
         transcriptions: currentResponse.transcriptions || [],
       });
 
-      // Update both transcriptions and audio URLs in state
+      // Update recordings in state
       if (currentResponse.transcriptions && currentResponse.transcriptions.length > 0) {
-        setTranscriptionsByQuestion(prev => ({
+        setRecordingsByQuestion(prev => ({
           ...prev,
-          [currentQuestionId]: currentResponse.transcriptions || []
-        }));
-      }
-
-      if (currentResponse.audioUrl) {
-        setAudioUrlsByQuestion(prev => ({
-          ...prev,
-          [currentQuestionId]: currentResponse.audioUrl || ""
+          [currentQuestionId]: currentResponse.transcriptions.map(text => ({
+            transcription: text,
+            audioUrl: currentResponse.audioUrl || ''
+          }))
         }));
       }
     }
@@ -128,8 +125,8 @@ export function QuestionnaireForm() {
         },
         body: JSON.stringify({
           ...data,
-          audioUrl: audioUrlsByQuestion[data.questionId],
-          transcriptions: transcriptionsByQuestion[data.questionId] || [],
+          audioUrl: (recordingsByQuestion[data.questionId] || [])[0]?.audioUrl,
+          transcriptions: (recordingsByQuestion[data.questionId] || []).map(r => r.transcription),
         })
       });
 
@@ -147,7 +144,6 @@ export function QuestionnaireForm() {
         description: "Your response has been saved successfully",
       });
 
-      // Only redirect to dashboard if explicitly requested
       if (variables.redirectToDashboard) {
         setLocation('/dashboard');
       }
@@ -169,43 +165,33 @@ export function QuestionnaireForm() {
     console.log('New transcription:', text, 'for question:', currentQuestionId);
     console.log('New audio URL:', audioUrl);
 
-    // Update transcriptions
-    const newTranscriptions = [...(transcriptionsByQuestion[currentQuestionId] || []), text];
-    setTranscriptionsByQuestion(prev => ({
+    const newRecording = { transcription: text, audioUrl };
+    const currentRecordings = recordingsByQuestion[currentQuestionId] || [];
+    const updatedRecordings = [...currentRecordings, newRecording];
+
+    setRecordingsByQuestion(prev => ({
       ...prev,
-      [currentQuestionId]: newTranscriptions
+      [currentQuestionId]: updatedRecordings
     }));
 
-    // Update audio URLs
-    setAudioUrlsByQuestion(prev => ({
-      ...prev,
-      [currentQuestionId]: audioUrl
-    }));
-
-    form.setValue('transcriptions', newTranscriptions);
+    form.setValue('transcriptions', updatedRecordings.map(r => r.transcription));
     form.setValue('audioUrl', audioUrl);
   };
 
   const handleDeleteTranscription = (indexToDelete: number) => {
-    const currentTranscriptions = transcriptionsByQuestion[currentQuestionId] || [];
-    const newTranscriptions = currentTranscriptions.filter((_, index) => index !== indexToDelete);
+    const currentRecordings = recordingsByQuestion[currentQuestionId] || [];
+    const newRecordings = currentRecordings.filter((_, index) => index !== indexToDelete);
 
-    setTranscriptionsByQuestion(prev => ({
+    setRecordingsByQuestion(prev => ({
       ...prev,
-      [currentQuestionId]: newTranscriptions
+      [currentQuestionId]: newRecordings
     }));
 
-    // If all transcriptions are deleted, clear the audio URL
-    if (newTranscriptions.length === 0) {
-      setAudioUrlsByQuestion(prev => {
-        const updated = { ...prev };
-        delete updated[currentQuestionId];
-        return updated;
-      });
+    // Update form values
+    form.setValue('transcriptions', newRecordings.map(r => r.transcription));
+    if (newRecordings.length === 0) {
       form.setValue('audioUrl', '');
     }
-
-    form.setValue('transcriptions', newTranscriptions);
 
     toast({
       title: "Transcription Deleted",
@@ -217,8 +203,6 @@ export function QuestionnaireForm() {
     const dataToSave = {
       ...data,
       questionId: currentQuestionId,
-      audioUrl: audioUrlsByQuestion[currentQuestionId],
-      transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
       redirectToDashboard: true
     };
 
@@ -232,8 +216,6 @@ export function QuestionnaireForm() {
     await saveResponse({
       ...data,
       questionId: currentQuestionId,
-      audioUrl: audioUrlsByQuestion[currentQuestionId],
-      transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
       redirectToDashboard: false
     });
 
@@ -256,8 +238,7 @@ export function QuestionnaireForm() {
   }
 
   const currentQuestion = questions.find(q => q.id === currentQuestionId);
-  const hasTranscriptions = (transcriptionsByQuestion[currentQuestionId] || []).length > 0;
-  const hasAudioUrl = Boolean(audioUrlsByQuestion[currentQuestionId]);
+  const hasRecordings = (recordingsByQuestion[currentQuestionId] || []).length > 0;
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -287,26 +268,26 @@ export function QuestionnaireForm() {
                   onTranscription={handleTranscription}
                 />
 
-                {/* Show transcription box if there are transcriptions */}
-                {hasTranscriptions && (
+                {/* Show transcription box if there are recordings */}
+                {hasRecordings && (
                   <div className="mt-4 space-y-2">
                     <h3 className="font-medium">Transcriptions:</h3>
                     <div className="space-y-2">
-                      {(transcriptionsByQuestion[currentQuestionId] || []).map((text, index) => (
+                      {(recordingsByQuestion[currentQuestionId] || []).map((recording, index) => (
                         <div key={index} className="p-3 bg-gray-50 rounded flex justify-between items-start">
                           <div>
                             <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
-                            <p className="mt-1 text-gray-700">{text}</p>
+                            <p className="mt-1 text-gray-700">{recording.transcription}</p>
                           </div>
                           <div className="flex gap-2">
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => handlePlayAudio(`${audioUrlsByQuestion[currentQuestionId]}_${index}`)}
+                              onClick={() => handlePlayAudio(recording.audioUrl)}
                               className="text-green-600 hover:text-green-700 hover:bg-green-50"
                             >
-                              {playingAudio === `${audioUrlsByQuestion[currentQuestionId]}_${index}` ? (
+                              {playingAudio === recording.audioUrl ? (
                                 <Pause className="w-4 h-4" />
                               ) : (
                                 <Play className="w-4 h-4" />
@@ -323,8 +304,8 @@ export function QuestionnaireForm() {
                             </Button>
                           </div>
                           <audio 
-                            id={`${audioUrlsByQuestion[currentQuestionId]}_${index}`}
-                            src={audioUrlsByQuestion[currentQuestionId]}
+                            id={recording.audioUrl}
+                            src={recording.audioUrl}
                             className="hidden"
                             onEnded={() => setPlayingAudio(null)}
                           />
