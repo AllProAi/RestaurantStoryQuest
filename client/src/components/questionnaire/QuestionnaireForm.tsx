@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient } from "@/lib/queryClient";
-import { Trash2 } from "lucide-react";
+import { Trash2, Play, Pause } from "lucide-react";
 
 export function QuestionnaireForm() {
   const [location] = useLocation();
@@ -20,6 +20,7 @@ export function QuestionnaireForm() {
 
   const [currentQuestionId, setCurrentQuestionId] = useState(initialQuestion);
   const [transcriptionsByQuestion, setTranscriptionsByQuestion] = useState<Record<number, string[]>>({});
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [_, setLocation] = useLocation();
 
   // Fetch questions
@@ -65,6 +66,22 @@ export function QuestionnaireForm() {
       });
     }
   }, [currentQuestionId, currentResponse]);
+
+  const handlePlayAudio = (audioUrl: string) => {
+    if (playingAudio === audioUrl) {
+      setPlayingAudio(null);
+      const audio = document.getElementById(audioUrl) as HTMLAudioElement;
+      audio?.pause();
+    } else {
+      if (playingAudio) {
+        const currentAudio = document.getElementById(playingAudio) as HTMLAudioElement;
+        currentAudio?.pause();
+      }
+      setPlayingAudio(audioUrl);
+      const audio = document.getElementById(audioUrl) as HTMLAudioElement;
+      audio?.play();
+    }
+  };
 
   const { mutate: saveResponse, isPending } = useMutation({
     mutationFn: async (data: InsertResponse & { redirectToDashboard?: boolean }) => {
@@ -209,6 +226,26 @@ export function QuestionnaireForm() {
                   language="en"
                   onTranscription={handleTranscription}
                 />
+
+                {/* Display saved audio recording if it exists */}
+                {currentResponse?.audioUrl && (
+                  <div className="mt-4">
+                    <audio id={currentResponse.audioUrl} src={currentResponse.audioUrl} controls />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePlayAudio(currentResponse.audioUrl!)}
+                      className="mb-4"
+                    >
+                      {playingAudio === currentResponse.audioUrl ? (
+                        <><Pause className="w-4 h-4 mr-2" /> Pause Recording</>
+                      ) : (
+                        <><Play className="w-4 h-4 mr-2" /> Play Saved Recording</>
+                      )}
+                    </Button>
+                  </div>
+                )}
 
                 {(transcriptionsByQuestion[currentQuestionId] || []).length > 0 && (
                   <div className="mt-4 space-y-2">

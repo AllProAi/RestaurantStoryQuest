@@ -90,6 +90,7 @@ export default function Dashboard() {
   };
 
   const editResponse = (questionId: number) => {
+    // Navigate to questionnaire with specific question ID
     setLocation(`/questionnaire?question=${questionId}`);
   };
 
