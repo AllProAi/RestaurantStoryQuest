@@ -66,7 +66,7 @@ export function QuestionnaireForm() {
   }, [currentQuestionId, currentResponse]);
 
   const { mutate: saveResponse, isPending } = useMutation({
-    mutationFn: async (data: InsertResponse) => {
+    mutationFn: async (data: InsertResponse & { redirectToDashboard?: boolean }) => {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
@@ -90,14 +90,17 @@ export function QuestionnaireForm() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/user/responses'] });
       toast({
         title: "Response Saved",
         description: "Your response has been saved successfully",
       });
-      // After saving, redirect to dashboard
-      setLocation('/dashboard');
+
+      // Only redirect to dashboard if explicitly requested
+      if (variables.redirectToDashboard) {
+        setLocation('/dashboard');
+      }
     },
     onError: (error) => {
       toast({
@@ -126,27 +129,33 @@ export function QuestionnaireForm() {
       ...data,
       questionId: currentQuestionId,
       transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
+      redirectToDashboard: true // Add flag to indicate dashboard redirect
     };
 
     console.log('Submitting form data:', dataToSave);
     saveResponse(dataToSave);
   });
 
-  const handleNextQuestion = () => {
-    // Save current question's data first
-    handleSave();
+  const handleNextQuestion = async () => {
+    const data = form.getValues();
+    // Save current response without redirecting
+    await saveResponse({
+      ...data,
+      questionId: currentQuestionId,
+      transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
+      redirectToDashboard: false
+    });
 
-    // Clear form for next question
+    // Move to next question
     const nextQuestionId = Math.min(questions.length || 8, currentQuestionId + 1);
     setCurrentQuestionId(nextQuestionId);
 
-    // Reset form with next question's existing response or empty state
-    const nextResponse = userResponses.find(r => r.questionId === nextQuestionId);
+    // Reset form for next question
     form.reset({
       questionId: nextQuestionId,
-      textResponse: nextResponse?.textResponse || "",
-      audioUrl: nextResponse?.audioUrl || "",
-      transcriptions: nextResponse?.transcriptions || [],
+      textResponse: "",
+      audioUrl: "",
+      transcriptions: [],
     });
   };
 
