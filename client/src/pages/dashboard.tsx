@@ -2,10 +2,23 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
-import { Download, LogOut, Play, Pause, Edit } from "lucide-react";
+import { Download, LogOut, Play, Pause, Edit, Trash2 } from "lucide-react";
 import type { Response, Question } from "@shared/schema";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [responses, setResponses] = useState<Response[]>([]);
@@ -13,6 +26,8 @@ export default function Dashboard() {
   const [_, setLocation] = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [showSecondConfirm, setShowSecondConfirm] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -89,8 +104,47 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (deleteConfirmText !== "Delete Forever") {
+      toast({
+        title: "Incorrect confirmation text",
+        description: 'Please type "Delete Forever" to confirm deletion',
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/user/responses', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete responses');
+      }
+
+      setResponses([]);
+      setShowSecondConfirm(false);
+      setDeleteConfirmText("");
+
+      toast({
+        title: "All responses deleted",
+        description: "Your responses have been permanently deleted",
+      });
+    } catch (error) {
+      console.error('Error deleting responses:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete responses. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const editResponse = (questionId: number) => {
-    // Navigate to questionnaire with specific question ID
     setLocation(`/questionnaire?question=${questionId}`);
   };
 
@@ -101,14 +155,82 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-[#006400]">
             Your Story Responses
           </h1>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="border-red-500 text-red-500 hover:bg-red-50"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex gap-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="border-red-500 text-red-500 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete All Responses
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete All Responses</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete all your responses? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => {
+                    setShowSecondConfirm(false);
+                    setDeleteConfirmText("");
+                  }}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => setShowSecondConfirm(true)}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Second confirmation dialog */}
+            <AlertDialog open={showSecondConfirm} onOpenChange={setShowSecondConfirm}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Final Confirmation Required</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    To permanently delete all responses, please type "Delete Forever" below:
+                    <Input
+                      className="mt-4"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="Type 'Delete Forever'"
+                    />
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => {
+                    setShowSecondConfirm(false);
+                    setDeleteConfirmText("");
+                  }}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAll}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    Delete All
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="border-red-500 text-red-500 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6">

@@ -17,6 +17,7 @@ export interface IStorage {
   createOrUpdateResponse(response: InsertResponse & { userId: number }): Promise<Response>;
   getResponse(id: number): Promise<Response | undefined>;
   getResponsesByUser(userId: number): Promise<Response[]>;
+  deleteAllResponsesByUser(userId: number): Promise<void>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -130,6 +131,18 @@ export class PostgresStorage implements IStorage {
       return userResponses;
     } catch (error) {
       console.error('Error getting responses:', error);
+      throw error;
+    }
+  }
+
+  async deleteAllResponsesByUser(userId: number): Promise<void> {
+    try {
+      console.log('Deleting all responses for user:', userId);
+      await db.delete(responses)
+        .where(eq(responses.userId, userId));
+      console.log('Successfully deleted all responses for user:', userId);
+    } catch (error) {
+      console.error('Error deleting responses:', error);
       throw error;
     }
   }

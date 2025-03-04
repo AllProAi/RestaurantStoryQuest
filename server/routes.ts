@@ -135,6 +135,17 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.delete("/api/user/responses", authenticateToken, async (req, res) => {
+    try {
+      await storage.deleteAllResponsesByUser(req.user.id);
+      res.json({ message: "All responses deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting responses:', error);
+      res.status(500).json({ error: "Failed to delete responses" });
+    }
+  });
+
+
   // Audio transcription endpoint
   app.post("/api/transcribe", upload.single('audio'), async (req, res) => {
     try {
