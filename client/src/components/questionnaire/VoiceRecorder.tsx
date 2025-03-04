@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Mic, Square, Loader2, Play, Pause } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from '@/hooks/use-toast';
 import { transcribeAudio } from '@/lib/openai';
 
@@ -20,6 +20,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [showRestartButton, setShowRestartButton] = useState(false);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const audioElements = useRef<HTMLAudioElement[]>([]);
@@ -52,6 +53,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
   const startRecording = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setShowRestartButton(false);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -118,6 +120,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           });
         } finally {
           setIsProcessing(false);
+          setShowRestartButton(true);
         }
       };
 
@@ -143,6 +146,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
       mediaRecorder.current.stop();
       mediaRecorder.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
+      setShowRestartButton(true); // Show restart button immediately after stopping
     }
   };
 
@@ -214,6 +218,29 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           </div>
         )}
       </div>
+
+      {/* Restart Recording Button */}
+      <AnimatePresence>
+        {showRestartButton && !isRecording && (
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="mt-4 flex justify-center"
+          >
+            <Button
+              onClick={startRecording}
+              className="bg-green-500 hover:bg-green-600 shadow-lg"
+              size="lg"
+              disabled={isProcessing}
+            >
+              <Mic className="w-5 h-5 mr-2" />
+              {language === "en" ? "Start New Recording" : "Start New Recording"}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Recordings list */}
       <div className="space-y-4">
