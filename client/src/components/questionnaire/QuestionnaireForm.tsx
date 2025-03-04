@@ -303,10 +303,10 @@ export function QuestionnaireForm() {
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => handlePlayAudio(audioUrlsByQuestion[currentQuestionId])}
+                              onClick={() => handlePlayAudio(`${audioUrlsByQuestion[currentQuestionId]}_${index}`)}
                               className="text-green-600 hover:text-green-700 hover:bg-green-50"
                             >
-                              {playingAudio === audioUrlsByQuestion[currentQuestionId] ? (
+                              {playingAudio === `${audioUrlsByQuestion[currentQuestionId]}_${index}` ? (
                                 <Pause className="w-4 h-4" />
                               ) : (
                                 <Play className="w-4 h-4" />
@@ -323,9 +323,10 @@ export function QuestionnaireForm() {
                             </Button>
                           </div>
                           <audio 
-                            id={audioUrlsByQuestion[currentQuestionId]} 
-                            src={audioUrlsByQuestion[currentQuestionId]} 
-                            className="hidden" 
+                            id={`${audioUrlsByQuestion[currentQuestionId]}_${index}`}
+                            src={audioUrlsByQuestion[currentQuestionId]}
+                            className="hidden"
+                            onEnded={() => setPlayingAudio(null)}
                           />
                         </div>
                       ))}
