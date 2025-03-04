@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
-import { Download, LogOut, Play, Pause, Edit, Trash2 } from "lucide-react";
+import { LogOut, Play, Pause, Edit, Trash2 } from "lucide-react";
 import type { Response, Question } from "@shared/schema";
 import {
   AlertDialog,
@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient"; // Import queryClient
-
 
 export default function Dashboard() {
   const [responses, setResponses] = useState<Response[]>([]);
@@ -284,33 +283,36 @@ export default function Dashboard() {
                         </div>
 
                         {/* Audio Recording */}
-                        {response.audioUrl && (
-                          <div>
-                            <h3 className="font-medium mb-2">Audio Recording:</h3>
-                            <audio id={response.audioUrl} src={response.audioUrl} className="hidden" />
-                            <Button
-                              onClick={() => handlePlayAudio(response.audioUrl!)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              {playingAudio === response.audioUrl ? (
-                                <><Pause className="w-4 h-4 mr-2" /> Pause</>
-                              ) : (
-                                <><Play className="w-4 h-4 mr-2" /> Play Recording</>
-                              )}
-                            </Button>
-                          </div>
-                        )}
-
-                        {/* Transcription */}
-                        {response.transcriptions && response.transcriptions.length > 0 && (
+                        {response.audioUrl && response.transcriptions && response.transcriptions.length > 0 && (
                           <div>
                             <h3 className="font-medium mb-2">Transcriptions:</h3>
                             <div className="space-y-2">
                               {response.transcriptions.map((text, index) => (
                                 <div key={index} className="p-3 bg-gray-50 rounded">
-                                  <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
-                                  <p className="mt-1 text-gray-700">{text}</p>
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
+                                      <p className="mt-1 text-gray-700">{text}</p>
+                                    </div>
+                                    <Button
+                                      onClick={() => handlePlayAudio(response.audioUrl!)}
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    >
+                                      {playingAudio === response.audioUrl ? (
+                                        <Pause className="w-4 h-4" />
+                                      ) : (
+                                        <Play className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                  <audio 
+                                    id={response.audioUrl}
+                                    src={response.audioUrl}
+                                    className="hidden"
+                                    onEnded={() => setPlayingAudio(null)}
+                                  />
                                 </div>
                               ))}
                             </div>
