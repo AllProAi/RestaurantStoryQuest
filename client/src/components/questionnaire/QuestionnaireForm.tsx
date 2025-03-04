@@ -239,7 +239,7 @@ export function QuestionnaireForm() {
                       className="mb-4"
                     >
                       {playingAudio === currentResponse.audioUrl ? (
-                        <><Pause className="w-4 h-4 mr-2" /> Pause Recording</>
+                        <><Pause className="w-4 h-4 mr-2" /> Pause</>
                       ) : (
                         <><Play className="w-4 h-4 mr-2" /> Play Saved Recording</>
                       )}
