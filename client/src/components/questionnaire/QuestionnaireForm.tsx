@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient } from "@/lib/queryClient";
-import { Trash2, Play, Pause } from "lucide-react";
+import { Trash2, Play, Pause, RotateCcw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -104,19 +104,25 @@ export function QuestionnaireForm() {
     }
   }, [currentQuestionId, currentResponse, form]);
 
-  const handlePlayAudio = (audioUrl: string) => {
-    if (playingAudio === audioUrl) {
-      setPlayingAudio(null);
-      const audio = document.getElementById(audioUrl) as HTMLAudioElement;
-      audio?.pause();
+  const handlePlayAudio = (audioId: string) => {
+    if (playingAudio === audioId) {
+      const audio = document.getElementById(audioId) as HTMLAudioElement;
+      if (audio) {
+        audio.pause();
+        setPlayingAudio(null);
+      }
     } else {
       if (playingAudio) {
         const currentAudio = document.getElementById(playingAudio) as HTMLAudioElement;
-        currentAudio?.pause();
+        if (currentAudio) {
+          currentAudio.pause();
+        }
       }
-      setPlayingAudio(audioUrl);
-      const audio = document.getElementById(audioUrl) as HTMLAudioElement;
-      audio?.play();
+      const audio = document.getElementById(audioId) as HTMLAudioElement;
+      if (audio) {
+        audio.play();
+        setPlayingAudio(audioId);
+      }
     }
   };
 
@@ -280,101 +286,102 @@ export function QuestionnaireForm() {
                   onTranscription={handleTranscription}
                 />
 
-                {/* Show transcription box if there are recordings */}
                 {hasRecordings && (
                   <div className="mt-4 space-y-2">
                     <h3 className="font-medium">Transcriptions:</h3>
                     <div className="space-y-2">
-                      {(recordingsByQuestion[currentQuestionId] || []).map((recording, index) => (
-                        <div key={index} className="p-3 bg-gray-50 rounded flex justify-between items-start">
-                          <div>
-                            <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
-                            <p className="mt-1 text-gray-700">{recording.transcription}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handlePlayAudio(recording.audioUrl)}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            >
-                              {playingAudio === recording.audioUrl ? (
-                                <Pause className="w-4 h-4" />
-                              ) : (
-                                <Play className="w-4 h-4" />
-                              )}
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
+                      {(recordingsByQuestion[currentQuestionId] || []).map((recording, index) => {
+                        const uniqueAudioId = `recording_${currentQuestionId}_${index}`;
+                        return (
+                          <div key={index} className="p-3 bg-gray-50 rounded relative">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
+                                <p className="mt-1 text-gray-700">{recording.transcription}</p>
+                              </div>
+                              <div className="flex gap-2">
                                 <Button
                                   type="button"
-                                  variant="ghost"
+                                  variant="outline"
                                   size="sm"
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handlePlayAudio(uniqueAudioId)}
+                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  {playingAudio === uniqueAudioId ? (
+                                    <Pause className="w-4 h-4" />
+                                  ) : (
+                                    <Play className="w-4 h-4" />
+                                  )}
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Recording</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this recording and its transcription?
-                                    This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteTranscription(index)}
-                                    className="bg-red-500 hover:bg-red-600"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-
-                          {/* Audio element and restart button */}
-                          <div className="relative">
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Recording</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete this recording and its transcription?
+                                        This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteTranscription(index)}
+                                        className="bg-red-500 hover:bg-red-600"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </div>
                             <audio
-                              id={recording.audioUrl}
+                              id={uniqueAudioId}
                               src={recording.audioUrl}
                               className="hidden"
                               onEnded={() => setPlayingAudio(null)}
                             />
                             <AnimatePresence>
-                              {playingAudio === recording.audioUrl && (
+                              {playingAudio === uniqueAudioId && (
                                 <motion.div
-                                  initial={{ y: -20, opacity: 0 }}
+                                  initial={{ y: 20, opacity: 0 }}
                                   animate={{ y: 0, opacity: 1 }}
-                                  exit={{ y: -20, opacity: 0 }}
+                                  exit={{ y: 20, opacity: 0 }}
                                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                  className="absolute top-full left-0 mt-2"
+                                  className="absolute bottom-0 left-0 transform translate-y-full"
+                                  style={{ marginTop: '5px' }}
                                 >
                                   <Button
                                     onClick={() => {
-                                      setPlayingAudio(null);
-                                      const audio = document.getElementById(recording.audioUrl) as HTMLAudioElement;
+                                      const audio = document.getElementById(uniqueAudioId) as HTMLAudioElement;
                                       if (audio) {
                                         audio.currentTime = 0;
                                         audio.pause();
+                                        setPlayingAudio(null);
                                       }
                                     }}
-                                    className="bg-green-500 hover:bg-green-600"
+                                    variant="outline"
                                     size="sm"
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                   >
-                                    <Play className="w-4 h-4 mr-2" />
-                                    Restart Playback
+                                    <RotateCcw className="w-4 h-4" />
                                   </Button>
                                 </motion.div>
                               )}
                             </AnimatePresence>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

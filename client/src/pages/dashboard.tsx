@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, Play, Pause, Edit, Trash2 } from "lucide-react";
+import { LogOut, Play, Pause, RotateCcw, Trash2, Edit } from "lucide-react";
 import type { Response, Question } from "@shared/schema";
 import {
   AlertDialog,
@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient"; // Import queryClient
+import { queryClient } from "@/lib/queryClient";
 
 export default function Dashboard() {
   const [responses, setResponses] = useState<Response[]>([]);
@@ -37,7 +37,6 @@ export default function Dashboard() {
       return;
     }
 
-    // Check if user is admin
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setIsAdmin(user.role === 'admin');
 
@@ -89,19 +88,25 @@ export default function Dashboard() {
     setLocation('/login');
   };
 
-  const handlePlayAudio = (audioUrl: string) => {
-    if (playingAudio === audioUrl) {
-      setPlayingAudio(null);
-      const audio = document.getElementById(audioUrl) as HTMLAudioElement;
-      audio?.pause();
+  const handlePlayAudio = (audioId: string) => {
+    if (playingAudio === audioId) {
+      const audio = document.getElementById(audioId) as HTMLAudioElement;
+      if (audio) {
+        audio.pause();
+        setPlayingAudio(null);
+      }
     } else {
       if (playingAudio) {
         const currentAudio = document.getElementById(playingAudio) as HTMLAudioElement;
-        currentAudio?.pause();
+        if (currentAudio) {
+          currentAudio.pause();
+        }
       }
-      setPlayingAudio(audioUrl);
-      const audio = document.getElementById(audioUrl) as HTMLAudioElement;
-      audio?.play();
+      const audio = document.getElementById(audioId) as HTMLAudioElement;
+      if (audio) {
+        audio.play();
+        setPlayingAudio(audioId);
+      }
     }
   };
 
@@ -127,7 +132,6 @@ export default function Dashboard() {
         throw new Error('Failed to delete responses');
       }
 
-      // Invalidate the responses query to refresh both dashboard and questionnaire
       queryClient.invalidateQueries({ queryKey: ['/api/user/responses'] });
 
       setResponses([]);
@@ -194,7 +198,6 @@ export default function Dashboard() {
               </AlertDialogContent>
             </AlertDialog>
 
-            {/* Second confirmation dialog */}
             <AlertDialog open={showSecondConfirm} onOpenChange={setShowSecondConfirm}>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -276,72 +279,76 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {/* Text Response */}
                         <div>
                           <h3 className="font-medium mb-2">Written Response:</h3>
                           <p className="text-gray-700">{response.textResponse}</p>
                         </div>
 
-                        {/* Audio Recording */}
                         {response.audioUrl && response.transcriptions && response.transcriptions.length > 0 && (
                           <div>
                             <h3 className="font-medium mb-2">Transcriptions:</h3>
                             <div className="space-y-2">
-                              {response.transcriptions.map((text, index) => (
-                                <div key={index} className="p-3 bg-gray-50 rounded relative">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
-                                      <p className="mt-1 text-gray-700">{text}</p>
-                                    </div>
-                                    <Button
-                                      onClick={() => handlePlayAudio(response.audioUrl!)}
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                    >
-                                      {playingAudio === response.audioUrl ? (
-                                        <Pause className="w-4 h-4" />
-                                      ) : (
-                                        <Play className="w-4 h-4" />
-                                      )}
-                                    </Button>
-                                  </div>
-                                  <audio 
-                                    id={response.audioUrl}
-                                    src={response.audioUrl}
-                                    className="hidden"
-                                    onEnded={() => setPlayingAudio(null)}
-                                  />
-                                  <AnimatePresence>
-                                    {playingAudio === response.audioUrl && (
-                                      <motion.div
-                                        initial={{ y: -20, opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        exit={{ y: -20, opacity: 0 }}
-                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                        className="absolute top-full left-0 mt-2"
-                                      >
+                              {response.transcriptions.map((text, index) => {
+                                const uniqueAudioId = `${response.id}_${index}`;
+                                return (
+                                  <div key={index} className="p-3 bg-gray-50 rounded relative">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
+                                        <p className="mt-1 text-gray-700">{text}</p>
+                                      </div>
+                                      <div className="flex gap-2">
                                         <Button
-                                          onClick={() => {
-                                            setPlayingAudio(null);
-                                            const audio = document.getElementById(response.audioUrl!) as HTMLAudioElement;
-                                            if (audio) {
-                                              audio.currentTime = 0;
-                                              audio.pause();
-                                            }
-                                          }}
-                                          className="bg-green-500 hover:bg-green-600"
+                                          onClick={() => handlePlayAudio(uniqueAudioId)}
+                                          variant="outline"
                                           size="sm"
+                                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                         >
-                                          <Play className="w-4 h-4 mr-2" />
-                                          Restart Playback
+                                          {playingAudio === uniqueAudioId ? (
+                                            <Pause className="w-4 h-4" />
+                                          ) : (
+                                            <Play className="w-4 h-4" />
+                                          )}
                                         </Button>
-                                      </motion.div>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-                              ))}
+                                      </div>
+                                    </div>
+                                    <audio 
+                                      id={uniqueAudioId}
+                                      src={response.audioUrl}
+                                      className="hidden"
+                                      onEnded={() => setPlayingAudio(null)}
+                                    />
+                                    <AnimatePresence>
+                                      {playingAudio === uniqueAudioId && (
+                                        <motion.div
+                                          initial={{ y: 20, opacity: 0 }}
+                                          animate={{ y: 0, opacity: 1 }}
+                                          exit={{ y: 20, opacity: 0 }}
+                                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                          className="absolute bottom-0 left-0 transform translate-y-full"
+                                          style={{ marginTop: '5px' }}
+                                        >
+                                          <Button
+                                            onClick={() => {
+                                              const audio = document.getElementById(uniqueAudioId) as HTMLAudioElement;
+                                              if (audio) {
+                                                audio.currentTime = 0;
+                                                audio.pause();
+                                                setPlayingAudio(null);
+                                              }
+                                            }}
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                          >
+                                            <RotateCcw className="w-4 h-4" />
+                                          </Button>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
