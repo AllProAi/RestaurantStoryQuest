@@ -128,7 +128,7 @@ export function QuestionnaireForm() {
         },
         body: JSON.stringify({
           ...data,
-          audioUrl: audioUrlsByQuestion[data.questionId] || "",
+          audioUrl: audioUrlsByQuestion[data.questionId],
           transcriptions: transcriptionsByQuestion[data.questionId] || [],
         })
       });
@@ -217,7 +217,7 @@ export function QuestionnaireForm() {
     const dataToSave = {
       ...data,
       questionId: currentQuestionId,
-      audioUrl: audioUrlsByQuestion[currentQuestionId] || "",
+      audioUrl: audioUrlsByQuestion[currentQuestionId],
       transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
       redirectToDashboard: true
     };
@@ -232,7 +232,7 @@ export function QuestionnaireForm() {
     await saveResponse({
       ...data,
       questionId: currentQuestionId,
-      audioUrl: audioUrlsByQuestion[currentQuestionId] || "",
+      audioUrl: audioUrlsByQuestion[currentQuestionId],
       transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
       redirectToDashboard: false
     });
