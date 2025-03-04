@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient } from "@/lib/queryClient";
+import { Trash2 } from "lucide-react";
 
 export function QuestionnaireForm() {
   const [location] = useLocation();
@@ -124,12 +125,28 @@ export function QuestionnaireForm() {
     form.setValue('transcriptions', newTranscriptions);
   };
 
+  const handleDeleteTranscription = (indexToDelete: number) => {
+    const currentTranscriptions = transcriptionsByQuestion[currentQuestionId] || [];
+    const newTranscriptions = currentTranscriptions.filter((_, index) => index !== indexToDelete);
+
+    setTranscriptionsByQuestion(prev => ({
+      ...prev,
+      [currentQuestionId]: newTranscriptions
+    }));
+    form.setValue('transcriptions', newTranscriptions);
+
+    toast({
+      title: "Transcription Deleted",
+      description: "Recording and transcription have been removed",
+    });
+  };
+
   const handleSave = form.handleSubmit((data) => {
     const dataToSave = {
       ...data,
       questionId: currentQuestionId,
       transcriptions: transcriptionsByQuestion[currentQuestionId] || [],
-      redirectToDashboard: true // Add flag to indicate dashboard redirect
+      redirectToDashboard: true
     };
 
     console.log('Submitting form data:', dataToSave);
@@ -198,9 +215,20 @@ export function QuestionnaireForm() {
                     <h3 className="font-medium">Transcriptions:</h3>
                     <div className="space-y-2">
                       {(transcriptionsByQuestion[currentQuestionId] || []).map((text, index) => (
-                        <div key={index} className="p-3 bg-gray-50 rounded">
-                          <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
-                          <p className="mt-1 text-gray-700">{text}</p>
+                        <div key={index} className="p-3 bg-gray-50 rounded flex justify-between items-start">
+                          <div>
+                            <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
+                            <p className="mt-1 text-gray-700">{text}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDeleteTranscription(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       ))}
                     </div>
