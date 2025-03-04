@@ -7,7 +7,7 @@ import { transcribeAudio } from '@/lib/openai';
 
 interface VoiceRecorderProps {
   language: "en" | "patois";
-  onTranscription: (text: string) => void;
+  onTranscription: (text: string, audioUrl: string) => void;
 }
 
 interface Recording {
@@ -24,8 +24,32 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
   const audioChunks = useRef<Blob[]>([]);
   const audioElements = useRef<HTMLAudioElement[]>([]);
 
+  const uploadAudio = async (audioBlob: Blob): Promise<string> => {
+    const formData = new FormData();
+    formData.append('audio', audioBlob);
+
+    try {
+      const response = await fetch('/api/upload-audio', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload audio');
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error('Error uploading audio:', error);
+      throw error;
+    }
+  };
+
   const startRecording = async (e: React.MouseEvent) => {
-    // Prevent form submission
     e.preventDefault();
     e.stopPropagation();
 
@@ -57,20 +81,24 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
 
         try {
           const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-          const url = URL.createObjectURL(audioBlob);
 
-          console.log('Starting transcription of recording...');
+          // Upload the audio file and get a permanent URL
+          const permanentUrl = await uploadAudio(audioBlob);
+          console.log('Audio uploaded, permanent URL:', permanentUrl);
+
+          // Get transcription
           const transcribedText = await transcribeAudio(audioBlob);
           console.log('Received transcription:', transcribedText);
 
           if (transcribedText) {
             setRecordings(prev => [...prev, {
-              url,
+              url: permanentUrl,
               transcription: transcribedText,
               isPlaying: false
             }]);
 
-            onTranscription(transcribedText);
+            // Pass both transcription and permanent URL to parent
+            onTranscription(transcribedText, permanentUrl);
 
             toast({
               title: language === "en" ? "Recording transcribed" : "Recording done",
@@ -82,7 +110,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
         } catch (error) {
           console.error('Error processing recording:', error);
           toast({
-            title: language === "en" ? "Transcription failed" : "Transcription nuh work",
+            title: language === "en" ? "Recording failed" : "Recording nuh work",
             description: language === "en" ? 
               "Please try recording again" : 
               "Try record it one more time",
@@ -108,7 +136,6 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
   };
 
   const stopRecording = (e: React.MouseEvent) => {
-    // Prevent form submission
     e.preventDefault();
     e.stopPropagation();
 
@@ -154,7 +181,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               onClick={startRecording}
-              type="button" // Explicitly set type to button
+              type="button"
               className="bg-red-500 hover:bg-red-600"
               disabled={isProcessing}
             >
@@ -171,7 +198,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           >
             <Button
               onClick={stopRecording}
-              type="button" // Explicitly set type to button
+              type="button"
               variant="destructive"
             >
               <Square className="w-4 h-4 mr-2" />
@@ -187,6 +214,7 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
           </div>
         )}
       </div>
+
       {/* Recordings list */}
       <div className="space-y-4">
         {recordings.map((recording, index) => (

@@ -175,6 +175,46 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Audio upload endpoint
+  app.post("/api/upload-audio", upload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        console.error('No audio file received');
+        return res.status(400).json({ error: "No audio file provided" });
+      }
+
+      console.log('Received audio file:', {
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        originalname: req.file.originalname
+      });
+
+      // Generate a unique filename
+      const filename = `audio-${Date.now()}.webm`;
+      const publicPath = `public/uploads/${filename}`;
+
+      // Ensure uploads directory exists
+      const dir = 'public/uploads';
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      // Save the file
+      fs.writeFileSync(publicPath, req.file.buffer);
+
+      // Return the URL that can be used to access the file
+      const audioUrl = `/uploads/${filename}`;
+      console.log('Audio saved, URL:', audioUrl);
+      res.json({ url: audioUrl });
+    } catch (error) {
+      console.error('Error saving audio:', error);
+      res.status(500).json({
+        error: "Failed to save audio file",
+        details: error.message
+      });
+    }
+  });
+
   // Add this to the existing routes
   app.get("/api/questions", async (_req, res) => {
     try {
