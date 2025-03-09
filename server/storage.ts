@@ -156,9 +156,9 @@ async function initializeDefaultUsers() {
   if (!adminExists) {
     await storage.createUser({
       username: 'Administrator',
-      password: 'Testing1234@',
+      password: 'onlythebeginning',
       name: 'Administrator',
-      confirmPassword: 'Testing1234@',
+      confirmPassword: 'onlythebeginning',
     }, 'admin');
   }
 
