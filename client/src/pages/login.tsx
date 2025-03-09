@@ -51,7 +51,7 @@ export default function Login() {
       if (result.user.role === 'admin') {
         setLocation('/dashboard');
       } else {
-        setLocation('/questionnaire');
+        setLocation('/home');  // Changed from /questionnaire to /home
       }
     } catch (error) {
       toast({
