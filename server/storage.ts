@@ -172,6 +172,17 @@ async function initializeDefaultUsers() {
       confirmPassword: 'TempPass@STX',
     });
   }
+
+  // Create Lisa user
+  const lisaExists = await storage.getUserByUsername('Lisa');
+  if (!lisaExists) {
+    await storage.createUser({
+      username: 'Lisa',
+      password: 'onlythebeginning',
+      name: 'Lisa',
+      confirmPassword: 'onlythebeginning',
+    });
+  }
 }
 
 initializeDefaultUsers().catch(console.error);
