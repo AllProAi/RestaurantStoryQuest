@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
+import { WelcomeModal } from "@/components/WelcomeModal";
 import { 
   Utensils, 
   Phone, 
@@ -62,6 +63,7 @@ const itemVariants = {
 export default function Landing() {
   return (
     <Layout>
+      <WelcomeModal />
       <div className="max-w-6xl mx-auto px-4 py-12">
         {/* Hero Section */}
         <motion.div 
