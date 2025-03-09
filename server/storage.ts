@@ -162,17 +162,6 @@ async function initializeDefaultUsers() {
     }, 'admin');
   }
 
-  // Create regular user
-  const userExists = await storage.getUserByUsername('JamaicanSpicy');
-  if (!userExists) {
-    await storage.createUser({
-      username: 'JamaicanSpicy',
-      password: 'TempPass@STX',
-      name: 'Jamaican Spicy',
-      confirmPassword: 'TempPass@STX',
-    });
-  }
-
   // Create Lisa user
   const lisaExists = await storage.getUserByUsername('Lisa');
   if (!lisaExists) {
