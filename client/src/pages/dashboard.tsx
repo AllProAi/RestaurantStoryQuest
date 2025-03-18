@@ -166,7 +166,7 @@ export default function Dashboard() {
 
   const togglePlayback = (audioUrl: string | null) => {
     if (!audioUrl) return;
-    
+
     if (playingAudio === audioUrl) {
       const audio = document.getElementById(audioUrl) as HTMLAudioElement;
       if (audio) {
@@ -203,15 +203,15 @@ export default function Dashboard() {
           <h1 className="text-2xl sm:text-3xl font-bold text-[#006400]">
             {isAdmin ? "Admin Dashboard" : "Your Responses"}
           </h1>
-          
+
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Input
               placeholder="Search responses..."
               className="w-full sm:w-[200px]"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            
-            <Button 
+
+            <Button
               onClick={handleGoToQuestionnaire}
               variant="outline"
               className="w-full sm:w-auto bg-[#009B3A] text-white hover:bg-[#006400]"
@@ -219,8 +219,8 @@ export default function Dashboard() {
               <ClipboardCheck className="h-4 w-4 mr-2" />
               Questionnaire
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={handleLogout}
               variant="destructive"
               className="w-full sm:w-auto"
@@ -314,7 +314,7 @@ export default function Dashboard() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <Button 
+            <Button
               onClick={handleGoToQuestionnaire}
               className="bg-[#009B3A] hover:bg-[#006400] text-white px-8 py-6 text-lg"
             >
@@ -336,7 +336,7 @@ export default function Dashboard() {
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ 
+        transition={{
           type: "spring",
           stiffness: 260,
           damping: 20,
@@ -354,28 +354,30 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Alert Dialog for confirmation */}
-      <AlertDialogContent className="max-w-md">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete All Responses</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete all your responses? This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => {
-            setShowSecondConfirm(false);
-            setDeleteConfirmText("");
-          }}>
-            Cancel
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => setShowSecondConfirm(true)}
-            className="bg-red-500 hover:bg-red-600"
-          >
-            Continue
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
+      <AlertDialog>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete All Responses</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete all your responses? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowSecondConfirm(false);
+              setDeleteConfirmText("");
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => setShowSecondConfirm(true)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showSecondConfirm} onOpenChange={setShowSecondConfirm}>
         <AlertDialogContent>
