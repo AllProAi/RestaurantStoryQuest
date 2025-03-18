@@ -172,6 +172,17 @@ async function initializeDefaultUsers() {
       confirmPassword: 'onlythebeginning',
     });
   }
+
+  // Create test user
+  const testExists = await storage.getUserByUsername('testing');
+  if (!testExists) {
+    await storage.createUser({
+      username: 'testing',
+      password: 'testing123',
+      name: 'Test User',
+      confirmPassword: 'testing123',
+    });
+  }
 }
 
 initializeDefaultUsers().catch(console.error);
