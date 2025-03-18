@@ -33,6 +33,10 @@ export default function Dashboard() {
   const [currentResponse, setCurrentResponse] = useState<Response | null>(null);
   const [audioRef, setAudioRef] = useState<React.RefObject<HTMLAudioElement> | null>(null);
 
+  // Add states to control dialogs
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -196,6 +200,37 @@ export default function Dashboard() {
     response.textResponse && response.textResponse.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleDeleteResponse = async (responseId: number) => {
+    try {
+      const response = await fetch(`/api/responses/${responseId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete response');
+      }
+
+      // Remove from local state
+      setResponses(prev => prev.filter(r => r.id !== responseId));
+      setShowDeleteDialog(false);
+
+      toast({
+        title: "Response deleted",
+        description: "Your response has been permanently deleted",
+      });
+    } catch (error) {
+      console.error('Error deleting response:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete response. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -250,16 +285,17 @@ export default function Dashboard() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-600"
-                          onClick={() => setCurrentResponse(response)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-600"
+                        onClick={() => {
+                          setCurrentResponse(response);
+                          setShowDeleteDialog(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -353,29 +389,52 @@ export default function Dashboard() {
         </Button>
       </motion.div>
 
-      {/* Alert Dialog for confirmation */}
-      <AlertDialogContent className="max-w-md">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete All Responses</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete all your responses? This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => {
-            setShowSecondConfirm(false);
-            setDeleteConfirmText("");
-          }}>
-            Cancel
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => setShowSecondConfirm(true)}
-            className="bg-red-500 hover:bg-red-600"
-          >
-            Continue
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
+      {/* Delete Single Response Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Response</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this response? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-500 hover:bg-red-600"
+              onClick={() => currentResponse && handleDeleteResponse(currentResponse.id)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete All Responses Dialog */}
+      <AlertDialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete All Responses</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete all your responses? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowSecondConfirm(false);
+              setDeleteConfirmText("");
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => setShowSecondConfirm(true)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showSecondConfirm} onOpenChange={setShowSecondConfirm}>
         <AlertDialogContent>
