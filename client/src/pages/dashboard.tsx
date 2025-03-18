@@ -192,6 +192,29 @@ export default function Dashboard() {
     setLocation('/home');
   };
 
+  const handleDeleteResponse = async (responseId: number) => {
+    try {
+      const response = await fetch(`/api/responses/${responseId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete response');
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['/api/user/responses'] });
+      setResponses(responses.filter(r => r.id !== responseId));
+      toast({ title: 'Response deleted successfully!' });
+    } catch (error) {
+      console.error('Error deleting response:', error);
+      toast({ title: 'Error deleting response', variant: 'destructive' });
+    }
+  };
+
+
   const filteredResponses = responses.filter(response =>
     response.textResponse && response.textResponse.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -250,16 +273,35 @@ export default function Dashboard() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-600"
-                          onClick={() => setCurrentResponse(response)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-600"
+                            onClick={() => setCurrentResponse(response)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Response</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this response? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteResponse(response.id)}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </CardHeader>
