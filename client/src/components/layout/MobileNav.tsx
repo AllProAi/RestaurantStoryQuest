@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Home, BarChart2, LogOut } from "lucide-react";
+import { Menu, X, Home, BarChart2, LogOut, Globe, ClipboardCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "./Layout";
+import { LanguageSwitch } from "@/components/ui/LanguageSwitch";
 
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [location] = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { language, setLanguage } = useLanguage();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -62,10 +65,19 @@ export function MobileNav() {
             className="fixed top-0 right-0 h-full w-3/4 max-w-xs bg-white shadow-lg z-50 flex flex-col"
           >
             <div className="flex flex-col p-6 space-y-6 mt-16">
+              {/* Language switch at the top */}
+              <div className="py-2 mb-4 border-b border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="h-5 w-5 text-green-600" />
+                  <span className="font-medium">Language Selection</span>
+                </div>
+                <LanguageSwitch language={language} onChange={setLanguage} />
+              </div>
+              
               <Link href="/" onClick={() => setIsOpen(false)}>
                 <div className="flex items-center gap-3 text-lg font-medium py-2">
                   <Home className="h-5 w-5" />
-                  Home
+                  Main Landing Page
                 </div>
               </Link>
 
@@ -73,19 +85,17 @@ export function MobileNav() {
                 <>
                   <Link href="/home" onClick={() => setIsOpen(false)}>
                     <div className="flex items-center gap-3 text-lg font-medium py-2">
-                      <Home className="h-5 w-5" />
-                      User Home
+                      <ClipboardCheck className="h-5 w-5" />
+                      Questionnaire
                     </div>
                   </Link>
                   
-                  {isAdmin && (
-                    <Link href="/dashboard" onClick={() => setIsOpen(false)}>
-                      <div className="flex items-center gap-3 text-lg font-medium py-2">
-                        <BarChart2 className="h-5 w-5" />
-                        Dashboard
-                      </div>
-                    </Link>
-                  )}
+                  <Link href="/dashboard" onClick={() => setIsOpen(false)}>
+                    <div className="flex items-center gap-3 text-lg font-medium py-2">
+                      <BarChart2 className="h-5 w-5" />
+                      Your Responses
+                    </div>
+                  </Link>
                 </>
               )}
 

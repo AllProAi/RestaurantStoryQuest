@@ -24,6 +24,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
+import { LanguageSwitch } from "@/components/ui/LanguageSwitch";
+import { useLanguage } from "@/components/layout/Layout";
+import type { Language } from "@/lib/translations";
 
 interface RecordingEntry {
   audioUrl: string;
@@ -39,6 +42,7 @@ export function QuestionnaireForm() {
   const [recordingsByQuestion, setRecordingsByQuestion] = useState<Record<number, RecordingEntry[]>>({});
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [_, setLocation] = useLocation();
+  const { language, setLanguage } = useLanguage();
 
   // Fetch questions
   const { data: questions = [], isLoading: questionsLoading } = useQuery<Question[]>({
@@ -262,9 +266,13 @@ export function QuestionnaireForm() {
     <div className="max-w-3xl mx-auto p-6">
       <Card>
         <CardContent className="p-6">
-          <h2 className="text-2xl font-bold mb-4">
-            Question {currentQuestionId} of {questions.length || 0}
-          </h2>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <h2 className="text-2xl font-bold">
+              Question {currentQuestionId} of {questions.length || 0}
+            </h2>
+            
+            <LanguageSwitch language={language} onChange={setLanguage} />
+          </div>
 
           <p className="text-lg mb-6">{currentQuestion?.text}</p>
 
@@ -282,7 +290,7 @@ export function QuestionnaireForm() {
               <div className="space-y-4">
                 <label className="font-medium">Record Your Answer:</label>
                 <VoiceRecorder
-                  language="en"
+                  language={language}
                   onTranscription={handleTranscription}
                 />
 

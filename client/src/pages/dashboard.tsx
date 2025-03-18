@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Layout } from "@/components/layout/Layout";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, Play, Pause, RotateCcw, Trash2, Edit } from "lucide-react";
+import { LogOut, Play, Pause, RotateCcw, Trash2, Edit, ClipboardCheck, PlusCircle } from "lucide-react";
 import type { Response, Question } from "@shared/schema";
 import {
   AlertDialog,
@@ -164,7 +164,9 @@ export default function Dashboard() {
     editResponse(response.questionId);
   };
 
-  const togglePlayback = (audioUrl: string) => {
+  const togglePlayback = (audioUrl: string | null) => {
+    if (!audioUrl) return;
+    
     if (playingAudio === audioUrl) {
       const audio = document.getElementById(audioUrl) as HTMLAudioElement;
       if (audio) {
@@ -186,6 +188,10 @@ export default function Dashboard() {
     }
   };
 
+  const handleGoToQuestionnaire = () => {
+    setLocation('/home');
+  };
+
   const filteredResponses = responses.filter(response =>
     response.textResponse && response.textResponse.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -204,6 +210,15 @@ export default function Dashboard() {
               className="w-full sm:w-[200px]"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            
+            <Button 
+              onClick={handleGoToQuestionnaire}
+              variant="outline"
+              className="w-full sm:w-auto bg-[#009B3A] text-white hover:bg-[#006400]"
+            >
+              <ClipboardCheck className="h-4 w-4 mr-2" />
+              Questionnaire
+            </Button>
             
             <Button 
               onClick={handleLogout}
@@ -263,7 +278,7 @@ export default function Dashboard() {
                           variant="outline"
                           size="sm"
                           className="h-10 w-10 rounded-full"
-                          onClick={() => togglePlayback(response.audioUrl)}
+                          onClick={() => response.audioUrl && togglePlayback(response.audioUrl)}
                         >
                           {playingAudio === response.audioUrl ? (
                             <Pause className="h-4 w-4" />
@@ -272,7 +287,7 @@ export default function Dashboard() {
                           )}
                         </Button>
                       </div>
-                      {response.transcriptions?.length > 0 && (
+                      {response.transcriptions && Array.isArray(response.transcriptions) && response.transcriptions.length > 0 && (
                         <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
                           <p><strong>Transcription:</strong></p>
                           <p className="whitespace-pre-wrap">{response.transcriptions[0]}</p>
@@ -292,6 +307,23 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Add New Response Button */}
+        <div className="flex justify-center mt-8">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Button 
+              onClick={handleGoToQuestionnaire}
+              className="bg-[#009B3A] hover:bg-[#006400] text-white px-8 py-6 text-lg"
+            >
+              <ClipboardCheck className="h-5 w-5 mr-3" />
+              Continue Questionnaire
+            </Button>
+          </motion.div>
+        </div>
+
         {/* Audio element for playback */}
         <audio
           ref={audioRef}
@@ -299,6 +331,27 @@ export default function Dashboard() {
           className="hidden"
         />
       </div>
+
+      {/* Floating Action Button for Mobile */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ 
+          type: "spring",
+          stiffness: 260,
+          damping: 20,
+          delay: 0.5
+        }}
+        className="fixed bottom-6 right-6 md:hidden z-10"
+      >
+        <Button
+          onClick={handleGoToQuestionnaire}
+          className="h-16 w-16 rounded-full bg-[#009B3A] hover:bg-[#006400] text-white shadow-lg"
+          aria-label="Continue questionnaire"
+        >
+          <PlusCircle className="h-8 w-8" />
+        </Button>
+      </motion.div>
 
       {/* Alert Dialog for confirmation */}
       <AlertDialogContent className="max-w-md">
