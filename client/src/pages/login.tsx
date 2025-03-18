@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/layout/Layout";
 import { motion } from "framer-motion";
+import { LogIn } from "lucide-react";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Please enter your username"),
@@ -51,7 +52,7 @@ export default function Login() {
       if (result.user.role === 'admin') {
         setLocation('/dashboard');
       } else {
-        setLocation('/home');  // Changed from /questionnaire to /home
+        setLocation('/home');
       }
     } catch (error) {
       toast({
@@ -64,30 +65,39 @@ export default function Login() {
 
   return (
     <Layout>
-      <div className="max-w-md mx-auto p-6">
+      <div className="max-w-md mx-auto p-4 sm:p-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="w-full"
         >
-          <Card>
-            <CardHeader>
-              <h1 className="text-2xl font-bold text-center text-[#006400]">
+          <Card className="border-2 shadow-lg">
+            <CardHeader className="pb-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-center text-[#006400]">
                 Welcome Back
               </h1>
+              <p className="text-center text-gray-600 text-sm sm:text-base mt-2">
+                Sign in to continue your cultural storytelling journey
+              </p>
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   <FormField
                     control={form.control}
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel className="text-base">Username</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter your username" {...field} />
+                          <Input 
+                            placeholder="Enter your username" 
+                            {...field} 
+                            className="h-12 text-base"
+                          />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -96,17 +106,24 @@ export default function Login() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel className="text-base">Password</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
+                          <Input 
+                            type="password" 
+                            placeholder="••••••••" 
+                            {...field} 
+                            className="h-12 text-base"
+                          />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
                   <Button 
                     type="submit" 
-                    className="w-full bg-[#009B3A] hover:bg-[#006400]"
+                    className="w-full h-12 text-base bg-[#009B3A] hover:bg-[#006400] mt-6"
                   >
+                    <LogIn className="h-5 w-5 mr-2" />
                     Login
                   </Button>
                 </form>

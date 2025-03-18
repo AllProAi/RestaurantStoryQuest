@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Loader2, Play, Pause } from "lucide-react";
+import { Mic, Square, Loader2, Play, Pause, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from '@/hooks/use-toast';
 import { transcribeAudio } from '@/lib/openai';
@@ -178,104 +178,115 @@ export function VoiceRecorder({ language, onTranscription }: VoiceRecorderProps)
     ));
   };
 
+  const restartRecording = () => {
+    setIsRecording(false);
+    setShowRestartButton(false);
+    startRecording(new MouseEvent('click'));
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        {!isRecording ? (
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+        <div className="flex-1 w-full text-center sm:text-left">
+          <p className="font-medium text-amber-800">
+            {language === "en" ? "Record in English" : "Record in Patois"}
+          </p>
+          <p className="text-sm text-amber-600 mt-1">
+            {isRecording ? "Recording in progress..." : recordings.length > 0 ? "Recording complete!" : "Click to start recording"}
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          {!isRecording ? (
             <Button
-              onClick={startRecording}
-              type="button"
-              className="bg-red-500 hover:bg-red-600"
               disabled={isProcessing}
+              onClick={startRecording}
+              className="h-14 w-14 sm:h-12 sm:w-12 rounded-full bg-red-500 hover:bg-red-600"
+              aria-label="Start recording"
             >
-              <Mic className="w-4 h-4 mr-2" />
-              {language === "en" ? "Record Your Story" : "Record Yu Story"}
+              <Mic className="h-6 w-6" />
             </Button>
-          </motion.div>
-        ) : (
-          <motion.div 
-            whileHover={{ scale: 1.05 }} 
-            whileTap={{ scale: 0.95 }}
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 1 }}
-          >
+          ) : (
             <Button
               onClick={stopRecording}
-              type="button"
-              variant="destructive"
+              className="h-14 w-14 sm:h-12 sm:w-12 rounded-full bg-gray-500 hover:bg-gray-600"
+              aria-label="Stop recording"
             >
-              <Square className="w-4 h-4 mr-2" />
-              {language === "en" ? "Stop Recording" : "Stop Di Recording"}
+              <Square className="h-6 w-6" />
             </Button>
-          </motion.div>
-        )}
+          )}
 
-        {isProcessing && (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            {language === "en" ? "Processing..." : "Working pon it..."}
-          </div>
-        )}
+          {showRestartButton && (
+            <Button
+              variant="outline"
+              onClick={restartRecording}
+              className="h-14 w-14 sm:h-12 sm:w-12 rounded-full"
+              aria-label="Restart recording"
+            >
+              <RotateCcw className="h-6 w-6" />
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Restart Recording Button */}
+      {isProcessing && (
+        <div className="flex items-center justify-center p-4 bg-white/80 rounded-lg border">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-600 mr-2" />
+          <p className="text-amber-800">Processing your recording...</p>
+        </div>
+      )}
+
       <AnimatePresence>
-        {showRestartButton && !isRecording && (
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="mt-4 flex justify-center"
-          >
-            <Button
-              onClick={startRecording}
-              className="bg-green-500 hover:bg-green-600 shadow-lg"
-              size="lg"
-              disabled={isProcessing}
-            >
-              <Mic className="w-5 h-5 mr-2" />
-              {language === "en" ? "Start New Recording" : "Start New Recording"}
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Recordings list */}
-      <div className="space-y-4">
         {recordings.map((recording, index) => (
-          <div key={recording.url} className="border rounded-lg p-4 bg-white">
-            <div className="flex items-center gap-4 mb-2">
-              <audio 
-                ref={el => {
-                  if (el) audioElements.current[index] = el;
-                }}
-                src={recording.url}
-                onEnded={() => setRecordings(prev => prev.map((rec, idx) => 
-                  idx === index ? { ...rec, isPlaying: false } : rec
-                ))}
-                className="hidden"
-              />
-              <Button
-                onClick={() => togglePlayback(index)}
-                variant="outline"
-                className="border-green-600 text-green-600 hover:bg-green-50"
-              >
-                {recording.isPlaying ? (
-                  <Pause className="w-4 h-4 mr-2" />
-                ) : (
-                  <Play className="w-4 h-4 mr-2" />
-                )}
-                {language === "en" ? `Recording ${index + 1}` : `Recording ${index + 1}`}
-              </Button>
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="p-4 bg-white rounded-lg border shadow-sm"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex-1">
+                <p className="font-medium text-gray-800 mb-2">Recording {index + 1}</p>
+                <p className="text-gray-600 text-sm line-clamp-3">
+                  {recording.transcription || "Transcription not available"}
+                </p>
+              </div>
+              
+              <div className="flex gap-2 self-end sm:self-center mt-2 sm:mt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-12 w-12 sm:h-10 sm:w-10 rounded-full"
+                  onClick={() => togglePlayback(index)}
+                  aria-label={recording.isPlaying ? "Pause" : "Play"}
+                >
+                  {recording.isPlaying ? (
+                    <Pause className="h-5 w-5" />
+                  ) : (
+                    <Play className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
             </div>
-
-            {/* Transcription display */}
-            <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
-              {recording.transcription}
-            </div>
-          </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      
+      {/* Hidden audio elements */}
+      <div className="hidden">
+        {recordings.map((_, index) => (
+          <audio
+            key={index}
+            ref={(el) => {
+              if (el) audioElements.current[index] = el;
+            }}
+            onEnded={() => {
+              setRecordings(prev => prev.map((rec, idx) => 
+                idx === index ? { ...rec, isPlaying: false } : rec
+              ));
+            }}
+          />
         ))}
       </div>
     </div>

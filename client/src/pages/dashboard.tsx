@@ -29,6 +29,9 @@ export default function Dashboard() {
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [showSecondConfirm, setShowSecondConfirm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentResponse, setCurrentResponse] = useState<Response | null>(null);
+  const [audioRef, setAudioRef] = useState<React.RefObject<HTMLAudioElement> | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -156,211 +159,201 @@ export default function Dashboard() {
     setLocation(`/questionnaire?question=${questionId}`);
   };
 
+  const handleEditResponse = (response: Response) => {
+    setCurrentResponse(response);
+    editResponse(response.questionId);
+  };
+
+  const togglePlayback = (audioUrl: string) => {
+    if (playingAudio === audioUrl) {
+      const audio = document.getElementById(audioUrl) as HTMLAudioElement;
+      if (audio) {
+        audio.pause();
+        setPlayingAudio(null);
+      }
+    } else {
+      if (playingAudio) {
+        const currentAudio = document.getElementById(playingAudio) as HTMLAudioElement;
+        if (currentAudio) {
+          currentAudio.pause();
+        }
+      }
+      const audio = document.getElementById(audioUrl) as HTMLAudioElement;
+      if (audio) {
+        audio.play();
+        setPlayingAudio(audioUrl);
+      }
+    }
+  };
+
+  const filteredResponses = responses.filter(response =>
+    response.textResponse && response.textResponse.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-[#006400]">
-            Your Story Responses
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#006400]">
+            {isAdmin ? "Admin Dashboard" : "Your Responses"}
           </h1>
-          <div className="flex gap-4">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-red-500 text-red-500 hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete All Responses
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete All Responses</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete all your responses? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => {
-                    setShowSecondConfirm(false);
-                    setDeleteConfirmText("");
-                  }}>
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => setShowSecondConfirm(true)}
-                    className="bg-red-500 hover:bg-red-600"
-                  >
-                    Continue
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
-            <AlertDialog open={showSecondConfirm} onOpenChange={setShowSecondConfirm}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Final Confirmation Required</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    To permanently delete all responses, please type "Delete Forever" below:
-                    <Input
-                      className="mt-4"
-                      value={deleteConfirmText}
-                      onChange={(e) => setDeleteConfirmText(e.target.value)}
-                      placeholder="Type 'Delete Forever'"
-                    />
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => {
-                    setShowSecondConfirm(false);
-                    setDeleteConfirmText("");
-                  }}>
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteAll}
-                    className="bg-red-500 hover:bg-red-600"
-                  >
-                    Delete All
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
-            <Button
+          
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Input
+              placeholder="Search responses..."
+              className="w-full sm:w-[200px]"
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            
+            <Button 
               onClick={handleLogout}
-              variant="outline"
-              className="border-red-500 text-red-500 hover:bg-red-50"
+              variant="destructive"
+              className="w-full sm:w-auto"
             >
-              <LogOut className="w-4 h-4 mr-2" />
+              <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
           </div>
         </div>
 
-        <div className="grid gap-6">
-          {responses.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center text-gray-500">
-                No responses found. Start sharing your story to see them here.
-              </CardContent>
-            </Card>
-          ) : (
-            responses.map((response) => {
-              const question = questions.find(q => q.id === response.questionId);
-              return (
-                <motion.div
-                  key={response.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <Card>
-                    <CardHeader className="flex flex-row justify-between items-center">
-                      <div>
-                        <h2 className="text-xl font-semibold">
-                          Question {response.questionId}:
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {question?.text}
-                        </p>
-                      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredResponses.map((response) => {
+            const question = questions.find(q => q.id === response.questionId);
+            return (
+              <Card key={response.id} className="overflow-hidden">
+                <CardHeader className="bg-amber-50 border-b p-4">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-medium text-amber-900">
+                      {question?.text || `Question ${response.questionId}`}
+                    </h3>
+                    <div className="flex space-x-1">
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => editResponse(response.questionId)}
-                        className="text-green-600 border-green-600 hover:bg-green-50"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-amber-700"
+                        onClick={() => handleEditResponse(response)}
                       >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Response
+                        <Edit className="h-4 w-4" />
                       </Button>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="font-medium mb-2">Written Response:</h3>
-                          <p className="text-gray-700">{response.textResponse}</p>
-                        </div>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-600"
+                          onClick={() => setCurrentResponse(response)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="mb-4">
+                    <p className="text-gray-700 whitespace-pre-wrap">
+                      {response.textResponse || "No text response provided."}
+                    </p>
+                  </div>
 
-                        {response.audioUrl && response.transcriptions && response.transcriptions.length > 0 && (
-                          <div>
-                            <h3 className="font-medium mb-2">Transcriptions:</h3>
-                            <div className="space-y-2">
-                              {response.transcriptions.map((text, index) => {
-                                const uniqueAudioId = `${response.id}_${index}`;
-                                return (
-                                  <div key={index} className="p-3 bg-gray-50 rounded relative">
-                                    <div className="flex justify-between items-start">
-                                      <div>
-                                        <span className="text-sm font-medium text-gray-500">Recording {index + 1}:</span>
-                                        <p className="mt-1 text-gray-700">{text}</p>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <Button
-                                          onClick={() => handlePlayAudio(uniqueAudioId)}
-                                          variant="outline"
-                                          size="sm"
-                                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                        >
-                                          {playingAudio === uniqueAudioId ? (
-                                            <Pause className="w-4 h-4" />
-                                          ) : (
-                                            <Play className="w-4 h-4" />
-                                          )}
-                                        </Button>
-                                      </div>
-                                    </div>
-                                    <audio 
-                                      id={uniqueAudioId}
-                                      src={response.audioUrl}
-                                      className="hidden"
-                                      onEnded={() => setPlayingAudio(null)}
-                                    />
-                                    <AnimatePresence>
-                                      {playingAudio === uniqueAudioId && (
-                                        <motion.div
-                                          initial={{ y: 20, opacity: 0 }}
-                                          animate={{ y: 0, opacity: 1 }}
-                                          exit={{ y: 20, opacity: 0 }}
-                                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                          className="absolute bottom-0 right-0 transform translate-y-full"
-                                          style={{ marginTop: '5px', marginRight: '8px', marginBottom: '8px' }}
-                                        >
-                                          <Button
-                                            onClick={() => {
-                                              const audio = document.getElementById(uniqueAudioId) as HTMLAudioElement;
-                                              if (audio) {
-                                                audio.currentTime = 0;
-                                                audio.pause();
-                                                setPlayingAudio(null);
-                                              }
-                                            }}
-                                            variant="outline"
-                                            size="sm"
-                                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                          >
-                                            <RotateCcw className="w-4 h-4" />
-                                          </Button>
-                                        </motion.div>
-                                      )}
-                                    </AnimatePresence>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
+                  {response.audioUrl && (
+                    <div className="pt-3 border-t">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-500">Audio Recording</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-10 w-10 rounded-full"
+                          onClick={() => togglePlayback(response.audioUrl)}
+                        >
+                          {playingAudio === response.audioUrl ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })
-          )}
+                      {response.transcriptions?.length > 0 && (
+                        <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                          <p><strong>Transcription:</strong></p>
+                          <p className="whitespace-pre-wrap">{response.transcriptions[0]}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
+
+        {filteredResponses.length === 0 && (
+          <div className="text-center p-8 bg-gray-50 rounded-lg border">
+            <p className="text-gray-500">No responses found.</p>
+          </div>
+        )}
+
+        {/* Audio element for playback */}
+        <audio
+          ref={audioRef}
+          onEnded={() => setPlayingAudio(null)}
+          className="hidden"
+        />
       </div>
+
+      {/* Alert Dialog for confirmation */}
+      <AlertDialogContent className="max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete All Responses</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete all your responses? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => {
+            setShowSecondConfirm(false);
+            setDeleteConfirmText("");
+          }}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => setShowSecondConfirm(true)}
+            className="bg-red-500 hover:bg-red-600"
+          >
+            Continue
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+
+      <AlertDialog open={showSecondConfirm} onOpenChange={setShowSecondConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Final Confirmation Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              To permanently delete all responses, please type "Delete Forever" below:
+              <Input
+                className="mt-4"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Type 'Delete Forever'"
+              />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowSecondConfirm(false);
+              setDeleteConfirmText("");
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAll}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }

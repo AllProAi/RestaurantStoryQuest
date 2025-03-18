@@ -1,6 +1,7 @@
-import { ReactNode, useEffect } from "react";
+import React, { ReactNode, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SunIcon, Flower2, Bird, Music, Leaf, Heart, Star } from "lucide-react";
+import { MobileNav } from "./MobileNav";
 
 interface LayoutProps {
   children: ReactNode;
@@ -164,35 +165,38 @@ export function Layout({ children }: LayoutProps) {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-2 font-serif">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 font-serif">
               Jamaican Spicy Bar and Grill
             </h1>
-            <p className="text-lg md:text-xl text-yellow-200 font-light">
+            <p className="text-base sm:text-lg md:text-xl text-yellow-200 font-light">
               Share Your Journey from Jamaica to Success
             </p>
           </motion.div>
         </div>
       </motion.header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <MobileNav />
+
+      <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
+          className="pb-20 sm:pb-0"
         >
           {children}
         </motion.div>
       </main>
 
       <motion.footer 
-        className="bg-black text-white py-6 mt-auto"
+        className="bg-black text-white py-4 sm:py-6 mt-auto"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-yellow-200">Daniel Hill Novus | Nexum 2025</p>
-          <p className="text-sm text-gray-400 mt-2">
+          <p className="text-xs sm:text-sm text-gray-400 mt-2">
             Preserving Your Culture, One Story at a Time
           </p>
         </div>
